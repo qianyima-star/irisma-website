@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qianyi Iris Ma | Scholar & Writer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Montserrat:wght@200;300;400;600&display=swap" rel="stylesheet">
+    <style>
+       :root {
+    --pink: #ff007f;
+    --purple: #8a2be2;
+    --cyan: #00ffff;
+    --silver-galaxy: rgba(255, 255, 255, 0.88);
+    /* 稍微亮一点的宇宙底色 */
+    --bg: #130224;
+    --cv-purple-dark: #1a0a33;
+    --cv-purple-mid: #4a148c;
+    --accent-line: #8a2be2;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    /* 用渐变做一个淡淡的星云底 */
+    background-color: var(--bg);
+    background-image: radial-gradient(
+        circle at 20% 0%,
+        #3a2370 0,
+        #130224 40%,
+        #050008 100%
+    );
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+}
+
+        #canvas-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 1;
+        }
+
+        .ui-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 50;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .pointer-events-auto { pointer-events: auto !important; }
+
+        .magic-glass {
+            background: var(--silver-galaxy);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 40px;
+            box-shadow: 0 40px 120px rgba(0, 0, 0, 0.6);
+            position: absolute;
+            z-index: 100;
+            display: none;
+            opacity: 0;
+            pointer-events: auto;
+            overflow-y: auto;
+            max-height: 75vh;
+            width: 90%;
+            max-width: 1000px;
+            color: var(--cv-purple-dark);
+            left: 50%;
+            top: 130px;
+            transform: translateX(-50%);
+        }
+
+        .font-cinzel { font-family: 'Cinzel', serif; }
+        .text-glow-pink { text-shadow: 0 0 15px var(--pink); color: white; }
+
+        .nav-btn {
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+            pointer-events: auto;
+            color: white;
+            font-size: 10px;
+        }
+        .nav-btn:hover {
+            color: var(--cyan);
+            border-bottom: 2px solid var(--cyan);
+            text-shadow: 0 0 8px var(--cyan);
+        }
+
+        .cv-section-title {
+            font-family: 'Cinzel', serif;
+            font-size: 0.9rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--cv-purple-mid);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding-bottom: 8px;
+            margin-bottom: 24px;
+            margin-top: 48px;
+            font-weight: 700;
+        }
+
+        .cv-item { margin-bottom: 32px; }
+        .cv-date { font-size: 0.75rem; color: #555; font-weight: 600; line-height: 1.6; }
+        .cv-content h4 { font-size: 1.05rem; font-weight: 700; color: #000; margin-bottom: 4px; }
+        .cv-content p { font-size: 0.9rem; line-height: 1.6; color: #333; }
+
+        .list-entry {
+            position: relative;
+            padding-left: 20px;
+            border-left: 2px solid var(--accent-line);
+            margin-bottom: 18px;
+            font-size: 0.88rem;
+            line-height: 1.7;
+            color: #111;
+        }
+
+        .doi-link {
+            color: var(--purple);
+            text-decoration: none;
+            word-break: break-all;
+            font-size: 0.8rem;
+            display: block;
+            margin-top: 4px;
+            opacity: 0.7;
+        }
+        .doi-link:hover { opacity: 1; text-decoration: underline; }
+
+        .creative-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            background: rgba(138, 43, 226, 0.1);
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--purple);
+            margin-bottom: 8px;
+        }
+
+        .scroll-container::-webkit-scrollbar { width: 4px; }
+        .scroll-container::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.1); border-radius: 10px; }
+
+        /* Portrait Styling */
+        .portrait-box {
+            width: 200px; height: 200px;
+            background: rgba(0,0,0,0.04);
+            border: 2px dashed rgba(138, 43, 226, 0.2);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; font-size: 10px;
+            color: #888; cursor: pointer;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .portrait-box:hover {
+            border-color: var(--purple);
+            background: rgba(138, 43, 226, 0.05);
+            transform: scale(1.02);
+        }
+        .portrait-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        .upload-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-weight: bold;
+            color: var(--purple);
+        }
+        .portrait-box:hover .upload-overlay { opacity: 1; }
+    </style>
+</head>
+<!-- Artwork Gallery Overlay -->
+<div id="gallery-overlay"
+     class="fixed inset-0 z-[120] hidden bg-black/80 backdrop-blur-sm items-center justify-center">
+  <div class="relative max-w-[90vw] max-h-[90vh] flex flex-col items-center">
+    <!-- 关闭按钮 -->
+    <button id="gallery-close"
+            class="absolute -top-10 right-0 text-[10px] tracking-[0.25em] uppercase text-white/70 hover:text-white">
+      Close ✕
+    </button>
+
+    <!-- 画作本体 -->
+    <img id="gallery-image"
+         src=""
+         alt="Artwork"
+         class="max-h-[70vh] rounded-3xl shadow-2xl border border-white/20 cursor-zoom-in transition-all duration-300" />
+
+    <!-- 上一张/下一张 -->
+    <div class="mt-4 flex gap-8 text-[10px] tracking-[0.3em] uppercase text-white/70 justify-center w-full">
+      <button id="gallery-prev" class="hover:text-white">◀ Prev</button>
+      <button id="gallery-next" class="hover:text-white">Next ▶</button>
+    </div>
+
+    <p class="mt-3 text-[9px] text-white/60 tracking-[0.2em] uppercase">
+      Click image to toggle zoom
+    </p>
+  </div>
+</div>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div class="ui-layer py-10">
+        <header class="w-full px-12 flex justify-between items-center pointer-events-auto">
+            <div class="font-cinzel text-xl tracking-[0.3em] text-glow-pink cursor-pointer" onclick="closeAll()">QIANYI IRIS MA</div>
+            <nav class="flex space-x-8 text-[9px] tracking-[0.2em] uppercase font-bold">
+                <span class="nav-btn" onclick="openPanel('about')">About Me</span>
+                <span class="nav-btn" onclick="openPanel('cv')">Academic CV</span>
+                <span class="nav-btn" onclick="openPanel('creative')">Creative Works</span>
+                <span class="nav-btn" onclick="openPanel('contact')">Connect</span>
+            </nav>
+        </header>
+
+        <main id="home-content" class="text-center pointer-events-auto mt-24">
+            <h2 class="text-[9px] tracking-[0.8em] uppercase opacity-50 mb-4 font-light text-white">Scholar • Writer • Mythmaker</h2>
+            <h1 class="font-cinzel text-5xl md:text-8xl italic mb-6 text-white tracking-tight">Qianyi Iris Ma</h1>
+        </main>
+
+        <footer class="w-full px-12 flex justify-between items-center text-[8px] tracking-[0.4em] opacity-40 uppercase pointer-events-auto text-white">
+            <div>Hong Kong • Los Angeles • Xi'an</div>
+            <div>© 2026 QIANYI IRIS MA | STELLAR STUDIO</div>
+        </footer>
+    </div>
+
+    <div class="fixed inset-0 z-[100] pointer-events-none">
+
+              <!-- About Me Section -->
+        <div id="about" class="magic-glass p-12 md:p-16 scroll-container">
+            <div class="flex justify-between items-start mb-10">
+                <h3 class="font-cinzel text-sm tracking-widest uppercase opacity-60">Archive: Profile</h3>
+                <button onclick="closeAll()" class="text-[9px] tracking-widest opacity-40 hover:opacity-100 uppercase underline">
+                    Back to Space
+                </button>
+            </div>
+
+            <div class="grid md:grid-cols-12 gap-12">
+                <!-- Left column: portrait + basic info -->
+                <div class="md:col-span-4 flex flex-col items-center md:items-start">
+                    <div class="portrait-box mb-8">
+                        <!-- 确保 me.jpeg 与 index.html 在同一目录 -->
+                        <img id="userPortrait" src="me.jpeg" alt="Portrait of Qianyi Iris Ma">
+                    </div>
+
+                    <div class="text-center md:text-left">
+                        <h4 class="font-cinzel text-2xl mb-1 tracking-widest uppercase">Qianyi Iris Ma</h4>
+                        <div class="space-y-2 opacity-80 text-[11px] font-medium mt-4">
+                            <p>PhD Candidate @ CUHK</p>
+                            <p>Visiting Researcher @ UCLA (2025–26)</p>
+                            <p>MFA @ CalArts</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right column: bio text -->
+                <div class="md:col-span-8 space-y-8">
+                    <section class="bio-text text-black font-light space-y-6">
+                        <p class="text-xl font-light italic text-purple-900 leading-tight">
+                            I’m Qianyi Iris Ma, a writer and scholar orbiting between Hong Kong, Los Angeles, and imaginary worlds.
+                        </p>
+                        <p class="text-base leading-relaxed">
+                            I study how Chinese myths and folklore shapeshift in contemporary Anglophone fiction—especially stories of
+                            <b>“shapeshifting heroines”</b> who cross borders between girl, ghost, goddess, and monster.
+                        </p>
+                        <p class="text-base leading-relaxed">
+                            I am currently completing a PhD in English Literary Studies at the
+                            <b>Chinese University of Hong Kong</b>, with a dissertation titled
+                            <i>Negotiating the Unhomed Shapeshifting Chinese Heroines</i>.
+                        </p>
+                        <p class="text-base leading-relaxed">
+                            Alongside the dissertation, I’m writing a novella titled <i>Ghost Goddesses</i> and developing a second research stream
+                            on AI and the humanities, exploring how large language models read, misread, and emotionally perform stories about AI.
+                        </p>
+                    </section>
+                </div>
+            </div>
+        </div>
+        <!-- Academic CV Section -->
+        <div id="cv" class="magic-glass p-12 md:p-20 scroll-container">
+            <div class="flex justify-between items-baseline mb-12">
+                <h2 class="font-cinzel text-2xl italic tracking-tight uppercase">Academic Curriculum Vitae</h2>
+                <button onclick="closeAll()" class="text-[9px] tracking-widest opacity-40 hover:opacity-100 uppercase underline">Close Archive</button>
+            </div>
+
+            <div class="mb-12 border-b border-black/10 pb-8">
+                <h3 class="font-cinzel text-4xl uppercase tracking-widest mb-4">QIANYI (IRIS) MA</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px] tracking-wider font-medium opacity-80">
+                    <div class="space-y-1">
+                        <p>ORCID: 0009-0003-9740-2910</p>
+                        <p>(+86) 19854495348</p>
+                        <p>qianyima@link.cuhk.edu.hk</p>
+                    </div>
+                    <div class="md:text-right space-y-1">
+                        <p>Born Apr 1997, Xi’an, China</p>
+                        <p class="uppercase text-purple-800 font-bold mt-2">Research Interests:</p>
+                        <p>Chinese myth studies; Asian American and diasporic Chinese narratives; speculative fiction; mythological retellings; transpacific Anglophone Chinese writing; AI and humanities.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Education -->
+            <div class="cv-section-title">Education</div>
+            <div class="space-y-8">
+                <div class="grid md:grid-cols-4 gap-4 cv-item">
+                    <div class="cv-date">08/2022 – 06/2026<br>Hong Kong</div>
+                    <div class="md:col-span-3 cv-content">
+                        <h4>Chinese University of Hong Kong (CUHK)</h4>
+                        <p>Doctor of Philosophy (PhD) in English – Literary Studies | GPA: 4.0/4.0</p>
+                        <p class="text-xs italic text-gray-600 mt-1">Supervisors: Eddie Tay and Joanna Mansbridge</p>
+                        <p class="text-xs font-semibold mt-1 italic">Dissertation: Negotiating the Unhomed Shapeshifting Chinese Heroines</p>
+                    </div>
+                </div>
+                <div class="grid md:grid-cols-4 gap-4 cv-item">
+                    <div class="cv-date">09/2019 – 12/2021<br>Los Angeles, USA</div>
+                    <div class="md:col-span-3 cv-content">
+                        <h4>California Institute of the Arts (CalArts)</h4>
+                        <p>Master of Fine Arts (MFA) in Creative Writing | GPA: 4.0/4.0</p>
+                    </div>
+                </div>
+                <div class="grid md:grid-cols-4 gap-4 cv-item">
+                    <div class="cv-date">09/2015 – 06/2019<br>Shanghai, China</div>
+                    <div class="md:col-span-3 cv-content">
+                        <h4>Shanghai International Studies University (SISU)</h4>
+                        <p>Bachelor of Arts (BA) in Broadcast Journalism | GPA: 3.8/4.0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Academic Appointments -->
+            <div class="cv-section-title">Academic Appointments</div>
+            <div class="space-y-8">
+                <div class="grid md:grid-cols-4 gap-4 cv-item">
+                    <div class="cv-date">09/2025 – 06/2026<br>Los Angeles, USA</div>
+                    <div class="md:col-span-3 cv-content">
+                        <h4>University of California, Los Angeles (UCLA)</h4>
+                        <p>Visiting Graduate Researcher @ UCLA Center for Chinese Studies</p>
+                        <p class="text-xs italic text-gray-600 mt-1">Supervisor: Stephanie Balkwill</p>
+                    </div>
+                </div>
+                <div class="grid md:grid-cols-4 gap-4 cv-item">
+                    <div class="cv-date">09/2022 – 09/2025<br>Hong Kong</div>
+                    <div class="md:col-span-3 cv-content">
+                        <h4>Chinese University of Hong Kong (CUHK)</h4>
+                        <p>Teaching Assistant, Department of English</p>
+                        <p class="text-xs opacity-80 mt-1">Supported English-medium undergraduate courses (Introduction to Literature, Children’s Literature, Special Topics in Creative Writing, Reading and Writing Short Stories).</p>
+                    </div>
+                </div>
+                <div class="grid md:grid-cols-4 gap-4 cv-item">
+                    <div class="cv-date">06/2018 – 10/2018<br>Toronto, Canada</div>
+                    <div class="md:col-span-3 cv-content">
+                        <h4>Ontario College of Art & Design University (OCAD U)</h4>
+                        <p>Research Assistant, Visual Analytics Lab</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Awards -->
+            <div class="cv-section-title">Honors & Awards</div>
+            <div class="space-y-3">
+                <div class="list-entry">09/2025 PAMLA Conference Graduate Student Scholarship</div>
+                <div class="list-entry">05/2025 CUHK PhD International Mobility Award (HKD 43,000)</div>
+                <div class="list-entry">05/2025 CUHK Reaching Out Award (HKD 10,000)</div>
+                <div class="list-entry">05/2024 Zhilan Scholarship for the Study of Chinese Culture 2023-24 (HKD 50,000)</div>
+                <div class="list-entry">01/2018 Mitacs Globalink Research Internship Award</div>
+            </div>
+
+            <!-- Publications -->
+            <div class="cv-section-title">Publications</div>
+            <h5 class="text-[10px] uppercase font-bold text-purple-900 mb-6">Peer-Reviewed Journal Articles</h5>
+            <div class="space-y-4">
+                <div class="list-entry">
+                    Qianyi Ma. (2025). “A Genealogy of Fish Women and Other Imagined Identities: ‘The Mechanics of Fluids’ in Larissa Lai’s <i>Salt Fish Girl</i>.” <i>Orbis Litterarum</i> (AHCI-indexed).
+                    <a href="https://doi.org/10.1111/oli.12480" class="doi-link" target="_blank">https://doi.org/10.1111/oli.12480</a>
+                </div>
+                <div class="list-entry">
+                    Qianyi Ma. (2025). “Navigating the Chinese Hui Diaspora in Middle-Grade Fantasy: Intersecting Marginalizations in <i>Zachary Ying and the Dragon Emperor</i>.” <i>Children’s Literature in Education</i> (AHCI-indexed).
+                    <a href="https://doi.org/10.1007/s10583-025-09644-9" class="doi-link" target="_blank">https://doi.org/10.1007/s10583-025-09644-9</a>
+                </div>
+                <div class="list-entry">
+                    Qianyi Ma. (2025). “Serpentine Sisters: Re-visioning the Snake Woman Myth in Anglophone Chinese Women’s Speculative Fiction.” Invited contribution to <i>Defiant Asymmetries: Asian American Literature Without Borders</i>, guest edited by King-Kok Cheung. <i>Literature</i>.
+                    <a href="https://doi.org/10.3390/literature6010001" class="doi-link" target="_blank">https://doi.org/10.3390/literature6010001</a>
+                </div>
+            </div>
+
+            <h5 class="text-[10px] uppercase font-bold text-purple-900 mt-10 mb-6">Manuscripts Under Review</h5>
+            <div class="space-y-2 opacity-80">
+                <div class="list-entry">“Reading AI with AI: Alignment Ethics and Affective Performance in ChatGPT’s Self-Reflexive Interpretations.” (<i>Convergence</i>)</div>
+                <div class="list-entry">“Against Exorcism: Haunting as Feminist Epistemology in <i>The Woman Warrior</i> and <i>The Ghost Bride</i>.” (<i>Contemporary Women’s Writing</i>)</div>
+                <div class="list-entry">“Do Queer Feminist Readings Travel? AI-Assisted Mapping of Anglophone Online Reception.” (<i>Digital Scholarship in the Humanities</i>)</div>
+            </div>
+
+            <!-- Conferences & Exhibitions Section -->
+            <div class="cv-section-title">Conference & Exhibitions</div>
+
+            <h5 class="text-[10px] uppercase font-bold text-purple-900 mb-6">Conference Presentations</h5>
+            <div class="space-y-4">
+                <div class="list-entry">“Rewriting Chinese History and Mythology through Fantasy: Xiran Jay Zhao’s <i>Iron Widow</i> Series.” 122nd Annual Conference of Pacific Ancient and Modern Language Association (PAMLA). November 20-23, 2025.</div>
+                <div class="list-entry">“Shapeshifting and Boundary-Crossing: From ’Madam White is Kept Forever under the Thunder Peak Tower’ to Her Adventures in <i>Serpentine</i> and <i>Sacrifice</i>.” AAS-in-Asia 2025. June 1-4, 2025.</div>
+                <div class="list-entry">“The Traveling Chinese Snake Woman.” 56th Annual Convention of the Northeast Modern Language Association (NeMLA). March 6–9, 2025.</div>
+                <div class="list-entry">“Revolutionary Sisterhood: the Chinese Snake Woman and the Lesbian Girl in Cindy Pon’s <i>Serpentine</i> and <i>Sacrifice</i>.” The Barcelona Conference on Arts, Media & Culture (IAFOR-BAMC 2024). November 12-16, 2024.</div>
+                <div class="list-entry">A short story - “Daughter of the Sea,” <i>Ecopoetics and Environmental Artivism</i> (organized by London Arts-Based Research Centre), July 11-12, 2024.</div>
+                <div class="list-entry">“The World Divided: A Short Graphic Fiction,” <i>Beyond the Comic Strip: Exploring Graphic Narratives and Arts-Based Research</i> (organized by London Arts-Based Research Centre), June 26-27, 2024.</div>
+                <div class="list-entry">“Queering the Abject: ’The Mechanics of Fluids’ in Larissa Lai’s <i>Salt Fish Girl</i>,” 55th Annual Convention of the Northeast Modern Language Association (NeMLA), March 7-10, 2024.</div>
+            </div>
+
+            <h5 class="text-[10px] uppercase font-bold text-purple-900 mt-10 mb-6">Session Chairing and Organization</h5>
+            <div class="space-y-4">
+                <div class="list-entry"><b>Session Chair and Organizer:</b> “Recasting Kinship and Resistance Across Trans-Pacific and Asian American Narratives.” Association for Asian American Studies (AAAS) Annual Conference, April 2-4, 2026.</div>
+                <div class="list-entry"><b>Session Chair and Co-Organizer:</b> “Rewriting and Inventing Myths in the Contemporary Chinese Fantasy Universe.” European Association for Chinese Studies (EACS) Conference, July 21-25, 2026.</div>
+                <div class="list-entry"><b>Session Chair and Organizer:</b> “Snake Sisters in Literature and Film Part I,” 56th Annual Convention of the Northeast Modern Language Association (NeMLA), March 6–9, 2025.</div>
+                <div class="list-entry"><b>Session Chair and Organizer:</b> “Snake Sisters in Literature and Film Part II,” 56th Annual Convention of the Northeast Modern Language Association (NeMLA), March 6–9, 2025.</div>
+                <div class="list-entry"><b>Session Chair:</b> Panel 3.B – “Literary Reflections on Nature and Climate Change: Ecopoetics and Environmental Artivism” (organized by London Arts-Based Research Centre), July 11–12, 2024.</div>
+            </div>
+
+            <div class="h-32"></div>
+        </div>
+
+        <!-- Creative Works Section -->
+        <div id="creative" class="magic-glass p-12 md:p-20 scroll-container">
+            <div class="flex justify-between items-baseline mb-16">
+                <h2 class="font-cinzel text-3xl italic tracking-tight uppercase">Creative Works</h2>
+                <button onclick="closeAll()" class="text-[9px] tracking-widest opacity-40 hover:opacity-100 uppercase underline">Exit</button>
+            </div>
+
+            <div class="cv-section-title">Novella & Long Fiction</div>
+            <div class="cv-item">
+                <span class="creative-tag">Part of PhD Thesis</span>
+                <h4>Ghost Goddesses (2022–2025)</h4>
+                <div class="list-entry">First novel reimagining the tragic fates of two Chinese goddesses, Ba and Luo Shen, through the perspective of a hybrid heroine navigating divinity, ghosthood, and humanity.</div>
+            </div>
+
+            <div class="cv-section-title">Short Story Collection</div>
+            <div class="cv-item">
+                <span class="creative-tag">MFA Thesis</span>
+                <h4>Lightless Blows (2019-2021)</h4>
+                <div class="list-entry">Includes: Bubbles, A Documentary Wandering at Midnight, Surrogate Friend, A Drowning Fish, Daughter of the Sea, The Wreck of Light, Invisible Snow, Beautiful Skin.</div>
+            </div>
+
+            <div class="cv-section-title">Exhibitions & Media</div>
+            <div class="grid md:grid-cols-2 gap-12">
+                <div class="cv-item">
+                    <span class="creative-tag">Film Exhibition</span>
+                    <h4>“Wander” (2020-2021)</h4>
+                    <p class="text-xs">Shown in DogStar Orchestra 17 and Feeler Gauge Festival. Experimenting with superimpositions and surreal sensations.</p>
+                </div>
+                <div class="cv-item">
+                    <span class="creative-tag">Art Show</span>
+                    <h4>Las Laguna Gallery: Painterly 2021</h4>
+                    <p class="text-xs">Acrylic painting ”Heart” was selected for this exhibition.</p>
+                </div>
+            </div>
+
+            <div class="cv-section-title">Picture Books (2018-2020)</div>
+            <div class="space-y-4">
+                <div class="list-entry">”Heart” : A girl rowing across the Milky Way, meeting herself inside.</div>
+                <div class="list-entry">”The World Divided” : A dystopian world that splits into two, the Tramp and the Fortress.</div>
+                <div class="list-entry">”Stumble into Neurons” : A fantasy adventure in the brain world of neurons.</div>
+                <div class="list-entry">”Fall into Hell” : A girl and Mr. Money’s travels around hell.</div>
+            </div>
+
+            <div class="h-32"></div>
+
+<!-- Paintings: Heart Series -->
+<div class="cv-section-title">Paintings – Heart Series</div>
+
+<div class="overflow-x-auto pb-4">
+  <div class="flex space-x-6 min-w-max">
+
+    <!-- Thumb 1 -->
+    <button type="button"
+            onclick="openArt(0)"
+            class="group block min-w-[220px] max-w-xs rounded-3xl overflow-hidden border border-white/15 bg-white/5 backdrop-blur-sm">
+      <img src="heart_1.jpg"
+           alt="Heart painting 1"
+           class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105" />
+      <div class="px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-white/70 group-hover:text-white">
+        HEART I
+      </div>
+    </button>
+
+    <!-- Thumb 2 -->
+    <button type="button"
+            onclick="openArt(1)"
+            class="group block min-w-[220px] max-w-xs rounded-3xl overflow-hidden border border-white/15 bg-white/5 backdrop-blur-sm">
+      <img src="heart_2.jpg"
+           alt="Heart painting 2"
+           class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105" />
+      <div class="px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-white/70 group-hover:text-white">
+        HEART II
+      </div>
+    </button>
+
+    <!-- Thumb 3 -->
+    <button type="button"
+            onclick="openArt(2)"
+            class="group block min-w-[220px] max-w-xs rounded-3xl overflow-hidden border border-white/15 bg-white/5 backdrop-blur-sm">
+      <img src="heart_3.jpg"
+           alt="Heart painting 3"
+           class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105" />
+      <div class="px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-white/70 group-hover:text-white">
+        HEART III
+      </div>
+    </button>
+
+  </div>
+</div>
+
+<!-- 全屏画廊覆盖层 -->
+<div id="art-lightbox"
+     class="fixed inset-0 z-[120] bg-black/80 hidden items-center justify-center px-4"
+     onclick="lightboxBgClick(event)">
+  <div class="relative max-w-4xl w-full max-h-[90vh] bg-black/40 border border-white/20 rounded-3xl overflow-hidden flex flex-col">
+
+    <!-- 关闭按钮 -->
+    <button type="button"
+            onclick="closeArt(); event.stopPropagation();"
+            class="absolute top-3 right-4 text-white/70 hover:text-white text-2xl leading-none">
+      &times;
+    </button>
+
+    <!-- 图片区域 -->
+    <div class="flex-1 flex items-center justify-center bg-black">
+      <img id="lightbox-image"
+           src=""
+           alt=""
+           class="max-h-[80vh] max-w-full object-contain">
+    </div>
+
+    <!-- 下方标题 + 左右箭头 -->
+    <div class="flex items-center justify-between px-6 py-3 bg-black/60 text-white text-xs tracking-[0.2em] uppercase">
+      <button type="button"
+              onclick="prevArt(); event.stopPropagation();"
+              class="px-2 py-1 hover:text-cyan-300">
+        &#10094; Prev
+      </button>
+
+      <div id="lightbox-caption" class="text-center flex-1"></div>
+
+      <button type="button"
+              onclick="nextArt(); event.stopPropagation();"
+              class="px-2 py-1 hover:text-cyan-300">
+        Next &#10095;
+      </button>
+    </div>
+  </div>
+</div>
+
+        </div>
+
+        <!-- Connect Section -->
+        <div id="contact" class="magic-glass p-24 text-center">
+            <h2 class="font-cinzel text-3xl mb-10 tracking-widest text-purple-950">Connect</h2>
+            <div class="space-y-6">
+                <p class="text-lg tracking-widest font-bold text-purple-700">qianyima@link.cuhk.edu.hk</p>
+                <div class="flex justify-center space-x-12 mt-16 text-[10px] uppercase tracking-[0.2em] font-bold">
+                    <span>Hong Kong</span>
+                    <span>Los Angeles</span>
+                    <span>Xi'an</span>
+                </div>
+            </div>
+            <button onclick="closeAll()" class="mt-20 text-[10px] uppercase underline tracking-widest opacity-40 hover:opacity-100">Back to the Stars</button>
+        </div>
+    </div>
+
+     <script>
+    let scene, camera, renderer, globe;
+    let orbitingObjects = [];     // 行星 + 光环
+    let shootingStars = [];
+    let starLayers = [];          // 多层彩色星云
+    const clock = new THREE.Clock();
+
+    // 画廊用到的变量：你的画作文件名
+    const galleryImages = ["heart_1.png", "heart_2.jpg", "heart_3.jpg"];
+    let currentImageIndex = 0;
+
+    // 用来检测鼠标点中了哪颗星球
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    function init() {
+        scene = new THREE.Scene();
+        // 一点淡淡的宇宙雾气
+        scene.fog = new THREE.FogExp2(0x080118, 0.004);
+
+        camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
+        camera.position.z = 45;
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById("canvas-container").appendChild(renderer.domElement);
+
+        /* ========== 1. 中间的主星球：更明亮的粉紫星球 ========== */
+        const globeGeo = new THREE.SphereGeometry(12, 64, 64);
+        const globeMat = new THREE.MeshStandardMaterial({
+            color: 0xff7ad9,          // 粉色主色
+            emissive: 0xb84dff,       // 紫色自发光
+            emissiveIntensity: 0.8,
+            roughness: 0.45,
+            metalness: 0.1,
+            transparent: true,
+            opacity: 0.95
+        });
+        globe = new THREE.Mesh(globeGeo, globeMat);
+        scene.add(globe);
+
+        /* ========== 2. 粉蓝光环：围绕主星球的发光环 ========== */
+        const ringConfigs = [
+            { radius: 18, color: 0xff9ad5, tilt: 0.9 },
+            { radius: 24, color: 0x9adfff, tilt: 1.2 }
+        ];
+
+        ringConfigs.forEach((cfg, i) => {
+            const ringGeo = new THREE.TorusGeometry(cfg.radius, 0.12, 16, 120);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: cfg.color,
+                transparent: true,
+                opacity: 0.4
+            });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = cfg.tilt;
+            ring.rotation.y = 0.3 * i;
+            ring.userData.spin = 0.0006 + i * 0.0004; // 轻轻自转
+            scene.add(ring);
+            orbitingObjects.push({ mesh: ring, isRing: true });
+        });
+
+        /* ========== 3. 小小的“糖果行星”绕着飞（保持原设计） ========== */
+        const satelliteData = [
+            {
+                radius: 20,
+                size: 2.2,
+                color: 0xffc1ea,
+                emissive: 0xff7ad9,
+                speed: 0.006,
+                yOffset: 4
+            },
+            {
+                radius: 26,
+                size: 1.7,
+                color: 0xaee6ff,
+                emissive: 0x6fd6ff,
+                speed: 0.004,
+                yOffset: -2
+            },
+            {
+                radius: 32,
+                size: 1.4,
+                color: 0xfff3b3,
+                emissive: 0xffdd6f,
+                speed: 0.003,
+                yOffset: 6
+            }
+        ];
+
+        satelliteData.forEach((data) => {
+            const sGeo = new THREE.SphereGeometry(data.size, 32, 32);
+            const sMat = new THREE.MeshStandardMaterial({
+                color: data.color,
+                emissive: data.emissive,
+                emissiveIntensity: 0.9,
+                roughness: 0.3,
+                metalness: 0.2
+            });
+            const sMesh = new THREE.Mesh(sGeo, sMat);
+            const angle = Math.random() * Math.PI * 2;
+            scene.add(sMesh);
+            orbitingObjects.push({
+                mesh: sMesh,
+                radius: data.radius,
+                speed: data.speed,
+                angle,
+                yOffset: data.yOffset
+            });
+        });
+
+        /* ========== 4. 五颜六色一闪一闪的星空（多层） ========== */
+        const starConfigs = [
+            // 白色细碎星
+            { count: 2200, size: 0.8, color: 0xffffff, speed: 0.7 },
+            // 粉色星
+            { count: 1800, size: 1.0, color: 0xffb3ff, speed: 1.1 },
+            // 浅蓝星
+            { count: 1500, size: 1.2, color: 0xaee6ff, speed: 0.9 },
+            // 奶黄色星
+            { count: 1200, size: 1.5, color: 0xfff3b3, speed: 0.6 }
+        ];
+
+        starConfigs.forEach((cfg, idx) => {
+            const geo = new THREE.BufferGeometry();
+            const positions = new Float32Array(cfg.count * 3);
+            const phase = new Float32Array(cfg.count); // 每颗星的“呼吸相位”
+
+            for (let i = 0; i < cfg.count; i++) {
+                positions[i * 3] = (Math.random() - 0.5) * 900;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * 900;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 900;
+                phase[i] = Math.random() * Math.PI * 2;
+            }
+
+            geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+            geo.setAttribute("phase", new THREE.BufferAttribute(phase, 1));
+
+            const mat = new THREE.PointsMaterial({
+                size: cfg.size,
+                color: cfg.color,
+                transparent: true,
+                opacity: 0.5,
+                depthWrite: false
+            });
+
+            const cloud = new THREE.Points(geo, mat);
+            cloud.userData.twinkleSpeed = cfg.speed;
+            cloud.userData.baseOpacity = 0.35 + idx * 0.08;
+            cloud.userData.layerIndex = idx;
+            starLayers.push(cloud);
+            scene.add(cloud);
+        });
+
+        /* ========== 5. 流星，稍微柔一点 ========== */
+        for (let i = 0; i < 8; i++) {
+            const sGeo = new THREE.BufferGeometry();
+            sGeo.setAttribute(
+                "position",
+                new THREE.BufferAttribute(new Float32Array([0, 0, 0]), 3)
+            );
+            const sStar = new THREE.Points(
+                sGeo,
+                new THREE.PointsMaterial({
+                    size: 2.2,
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0
+                })
+            );
+            scene.add(sStar);
+            shootingStars.push(sStar);
+            triggerShootingStar(sStar);
+        }
+
+        /* ========== 6. 灯光：粉光 + 蓝光打在主星球上 ========== */
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+
+        const pinkLight = new THREE.PointLight(0xff66cc, 2.2, 260);
+        pinkLight.position.set(40, 50, 60);
+        scene.add(pinkLight);
+
+        const cyanLight = new THREE.PointLight(0x66d9ff, 1.4, 260);
+        cyanLight.position.set(-35, -20, -40);
+        scene.add(cyanLight);
+
+        /* ========== 7. 绑定：点击 canvas 上的星球 -> 打开画廊 ========== */
+    // renderer.domElement.addEventListener("click", onCanvasClick);
+window.addEventListener("click", onCanvasClick);
+
+        // 绑定画廊按钮
+        const overlay = document.getElementById("gallery-overlay");
+        const closeBtn = document.getElementById("gallery-close");
+        const nextBtn = document.getElementById("gallery-next");
+        const prevBtn = document.getElementById("gallery-prev");
+        const img = document.getElementById("gallery-image");
+
+        if (closeBtn) closeBtn.addEventListener("click", closeGallery);
+        if (nextBtn) nextBtn.addEventListener("click", nextImage);
+        if (prevBtn) prevBtn.addEventListener("click", prevImage);
+
+        if (overlay) {
+            // 点黑色背景也可以关闭
+            overlay.addEventListener("click", (e) => {
+                if (e.target.id === "gallery-overlay") {
+                    closeGallery();
+                }
+            });
+        }
+
+        if (img) {
+            // 点击图片：缩略图 <-> 放大
+            img.addEventListener("click", () => {
+                const isFull = img.dataset.full === "1";
+                if (isFull) {
+                    img.dataset.full = "0";
+                    img.style.maxHeight = "70vh";
+                    img.classList.remove("cursor-zoom-out");
+                    img.classList.add("cursor-zoom-in");
+                } else {
+                    img.dataset.full = "1";
+                    img.style.maxHeight = "90vh";
+                    img.classList.remove("cursor-zoom-in");
+                    img.classList.add("cursor-zoom-out");
+                }
+            });
+        }
+
+        animate();
+    }
+
+    function triggerShootingStar(star) {
+        const startX = (Math.random() - 0.5) * 400;
+        const startY = 140 + Math.random() * 120;
+        const startZ = (Math.random() - 0.5) * 120;
+        star.position.set(startX, startY, startZ);
+
+        const duration = 1.1 + Math.random() * 1.2;
+        const delay = Math.random() * 8;
+
+        gsap.to(star.position, {
+            x: startX - 260,
+            y: startY - 360,
+            duration,
+            delay,
+            onStart: () => {
+                star.material.opacity = 0.9;
+            },
+            onComplete: () => {
+                star.material.opacity = 0;
+                triggerShootingStar(star);
+            }
+        });
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        const t = clock.getElapsedTime();
+
+        // 主星球轻轻旋转+呼吸
+        if (globe) {
+            globe.rotation.y += 0.003;
+            globe.rotation.x = 0.15 * Math.sin(t * 0.2);
+        }
+
+        // 多层星空：慢慢转 + 轻微闪烁
+        starLayers.forEach((cloud, idx) => {
+            cloud.rotation.y += 0.00015 * (idx + 1);
+            cloud.rotation.x += 0.00005 * (idx + 1);
+
+            const speed = cloud.userData.twinkleSpeed;
+            const base = cloud.userData.baseOpacity;
+            cloud.material.opacity = base + 0.25 * Math.sin(t * speed + idx);
+        });
+
+        // 环与小行星
+        orbitingObjects.forEach((obj) => {
+            if (obj.isRing) {
+                obj.mesh.rotation.z += obj.mesh.userData.spin;
+            } else {
+                obj.angle += obj.speed;
+                obj.mesh.position.x = Math.cos(obj.angle) * obj.radius;
+                obj.mesh.position.z = Math.sin(obj.angle) * obj.radius;
+                obj.mesh.position.y =
+                    obj.yOffset + Math.sin(obj.angle * 0.5) * 2.5;
+            }
+        });
+
+        renderer.render(scene, camera);
+    }
+
+    // ========== 点击星球 -> 触发 3D 选取 ==========
+    function onCanvasClick(event) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+
+        // 只让“行星”（非光环）可点
+        const planetMeshes = orbitingObjects
+            .filter(o => !o.isRing)
+            .map(o => o.mesh);
+
+        const intersects = raycaster.intersectObjects(planetMeshes);
+
+        if (intersects.length > 0) {
+            showGallery();
+        }
+    }
+
+    // ========== 画廊相关函数 ==========
+    function showGallery() {
+        const overlay = document.getElementById("gallery-overlay");
+        const img = document.getElementById("gallery-image");
+        if (!overlay || !img || galleryImages.length === 0) return;
+
+        currentImageIndex = 0;
+        updateGalleryImage();
+
+        overlay.classList.remove("hidden");
+        overlay.classList.add("flex");
+    }
+
+    function updateGalleryImage() {
+        const img = document.getElementById("gallery-image");
+        if (!img) return;
+        img.src = galleryImages[currentImageIndex];
+        img.dataset.full = "0";
+        img.style.maxHeight = "70vh";
+        img.classList.remove("cursor-zoom-out");
+        img.classList.add("cursor-zoom-in");
+    }
+
+    function closeGallery() {
+        const overlay = document.getElementById("gallery-overlay");
+        if (!overlay) return;
+        overlay.classList.add("hidden");
+        overlay.classList.remove("flex");
+    }
+
+    function nextImage() {
+        if (galleryImages.length === 0) return;
+        currentImageIndex = (currentImageIndex + 1) % galleryImages.length;
+        updateGalleryImage();
+    }
+
+    function prevImage() {
+        if (galleryImages.length === 0) return;
+        currentImageIndex =
+            (currentImageIndex - 1 + galleryImages.length) % galleryImages.length;
+        updateGalleryImage();
+    }
+
+    // ========== 原来的 UI 面板控制，不动 ==========
+    function openPanel(id) {
+        closeAll();
+        const panel = document.getElementById(id);
+        if (panel) {
+            panel.style.display = "block";
+            panel.scrollTop = 0;
+            gsap.fromTo(
+                panel,
+                { opacity: 0, y: 30 },
+                { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }
+            );
+            document.getElementById("home-content").style.opacity = "0.05";
+        }
+    }
+
+    function closeAll() {
+        document.querySelectorAll(".magic-glass").forEach((p) => {
+            if (p.style.display === "block") {
+                gsap.to(p, {
+                    opacity: 0,
+                    y: 20,
+                    duration: 0.3,
+                    onComplete: () => (p.style.display = "none")
+                });
+            }
+        });
+        document.getElementById("home-content").style.opacity = "1";
+    }
+
+    window.onload = init;
+    window.onresize = () => {
+
+        window.onload = init;
+        window.onresize = () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        };
+
+        /* ========== Art lightbox ========== */
+        const artworks = [
+            { src: "heart_1.jpg", title: "HEART I" },
+            { src: "heart_2.jpg", title: "HEART II" },
+            { src: "heart_3.jpg", title: "HEART III" }
+        ];
+
+        let currentArtIndex = 0;
+
+        function showArt(index) {
+            const lightbox = document.getElementById("art-lightbox");
+            const img = document.getElementById("lightbox-image");
+            const caption = document.getElementById("lightbox-caption");
+
+            currentArtIndex = (index + artworks.length) % artworks.length;
+            const art = artworks[currentArtIndex];
+
+            img.src = art.src;
+            img.alt = art.title;
+            caption.textContent = art.title;
+
+            lightbox.classList.remove("hidden");
+            lightbox.classList.add("flex");
+        }
+
+        function openArt(index) {
+            showArt(index);
+        }
+
+        function closeArt() {
+            const lightbox = document.getElementById("art-lightbox");
+            lightbox.classList.add("hidden");
+            lightbox.classList.remove("flex");
+        }
+
+        function nextArt() {
+            showArt(currentArtIndex + 1);
+        }
+
+        function prevArt() {
+            showArt(currentArtIndex - 1);
+        }
+
+        function lightboxBgClick(e) {
+            // 点击黑色背景时关闭；点击内部内容不关闭
+            if (e.target.id === "art-lightbox") {
+                closeArt();
+            }
+        }
+
+        // 键盘控制：Esc 关闭，左右键切换
+        window.addEventListener("keydown", (e) => {
+            const lightbox = document.getElementById("art-lightbox");
+            const isOpen = !lightbox.classList.contains("hidden");
+            if (!isOpen) return;
+
+            if (e.key === "Escape") {
+                closeArt();
+            } else if (e.key === "ArrowRight") {
+                nextArt();
+            } else if (e.key === "ArrowLeft") {
+                prevArt();
+            }
+        });
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+</script>
+
+</body>
+</html>
