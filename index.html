@@ -582,23 +582,15 @@ body, html {
 
      <script>
     let scene, camera, renderer, globe;
-    let orbitingObjects = [];     // 行星 + 光环
+    let orbitingObjects = [];
     let shootingStars = [];
-    let starLayers = [];          // 多层彩色星云
+    let starLayers = [];
     const clock = new THREE.Clock();
-
-    // 画廊用到的变量：你的画作文件名
-    const galleryImages = ["heart_1.png", "heart_2.jpg", "heart_3.jpg"];
-    let currentImageIndex = 0;
-
-    // 用来检测鼠标点中了哪颗星球
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
 
     function init() {
         scene = new THREE.Scene();
-        // 一点淡淡的宇宙雾气
-        scene.fog = new THREE.FogExp2(0x080118, 0.004);
+        // 🔻 性能优化：先关掉雾，有需要再开
+        // scene.fog = new THREE.FogExp2(0x080118, 0.004);
 
         camera = new THREE.PerspectiveCamera(
             75,
@@ -610,14 +602,15 @@ body, html {
 
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
+        // 🔻 性能优化：限制像素比，避免在高分屏上太吃力
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
         document.getElementById("canvas-container").appendChild(renderer.domElement);
 
-        /* ========== 1. 中间的主星球：更明亮的粉紫星球 ========== */
-        const globeGeo = new THREE.SphereGeometry(12, 64, 64);
+        /* ========== 1. 中间的主星球：稍微减细分 ========== */
+        const globeGeo = new THREE.SphereGeometry(12, 40, 40); // 原来 64,64
         const globeMat = new THREE.MeshStandardMaterial({
-            color: 0xff7ad9,          // 粉色主色
-            emissive: 0xb84dff,       // 紫色自发光
+            color: 0xff7ad9,
+            emissive: 0xb84dff,
             emissiveIntensity: 0.8,
             roughness: 0.45,
             metalness: 0.1,
@@ -627,14 +620,14 @@ body, html {
         globe = new THREE.Mesh(globeGeo, globeMat);
         scene.add(globe);
 
-        /* ========== 2. 粉蓝光环：围绕主星球的发光环 ========== */
+        /* ========== 2. 光环保持不变（只是轻微自转） ========== */
         const ringConfigs = [
             { radius: 18, color: 0xff9ad5, tilt: 0.9 },
             { radius: 24, color: 0x9adfff, tilt: 1.2 }
         ];
 
         ringConfigs.forEach((cfg, i) => {
-            const ringGeo = new THREE.TorusGeometry(cfg.radius, 0.12, 16, 120);
+            const ringGeo = new THREE.TorusGeometry(cfg.radius, 0.12, 16, 80); // 80 分段即可
             const ringMat = new THREE.MeshBasicMaterial({
                 color: cfg.color,
                 transparent: true,
@@ -643,16 +636,16 @@ body, html {
             const ring = new THREE.Mesh(ringGeo, ringMat);
             ring.rotation.x = cfg.tilt;
             ring.rotation.y = 0.3 * i;
-            ring.userData.spin = 0.0006 + i * 0.0004; // 轻轻自转
+            ring.userData.spin = 0.0006 + i * 0.0004;
             scene.add(ring);
             orbitingObjects.push({ mesh: ring, isRing: true });
         });
 
-        /* ========== 3. 小小的“糖果行星”绕着飞（保持原设计） ========== */
+        /* ========== 3. 糖果行星：数量不变，计算稍微轻一点 ========== */
         const satelliteData = [
             {
                 radius: 20,
-                size: 2.2,
+                size: 2.0,
                 color: 0xffc1ea,
                 emissive: 0xff7ad9,
                 speed: 0.006,
@@ -660,7 +653,7 @@ body, html {
             },
             {
                 radius: 26,
-                size: 1.7,
+                size: 1.6,
                 color: 0xaee6ff,
                 emissive: 0x6fd6ff,
                 speed: 0.004,
@@ -677,7 +670,7 @@ body, html {
         ];
 
         satelliteData.forEach((data) => {
-            const sGeo = new THREE.SphereGeometry(data.size, 32, 32);
+            const sGeo = new THREE.SphereGeometry(data.size, 24, 24); // 降一点细分
             const sMat = new THREE.MeshStandardMaterial({
                 color: data.color,
                 emissive: data.emissive,
@@ -697,32 +690,26 @@ body, html {
             });
         });
 
-        /* ========== 4. 五颜六色一闪一闪的星空（多层） ========== */
+        /* ========== 4. 彩色星空：大幅减数量（从 6000+ 降到 ~1500） ========== */
         const starConfigs = [
-            // 白色细碎星
-            { count: 2200, size: 0.8, color: 0xffffff, speed: 0.7 },
-            // 粉色星
-            { count: 1800, size: 1.0, color: 0xffb3ff, speed: 1.1 },
-            // 浅蓝星
-            { count: 1500, size: 1.2, color: 0xaee6ff, speed: 0.9 },
-            // 奶黄色星
-            { count: 1200, size: 1.5, color: 0xfff3b3, speed: 0.6 }
+            { count: 600, size: 0.9, color: 0xffffff, speed: 0.7 },
+            { count: 400, size: 1.0, color: 0xffb3ff, speed: 1.1 },
+            { count: 300, size: 1.1, color: 0xaee6ff, speed: 0.9 },
+            { count: 250, size: 1.3, color: 0xfff3b3, speed: 0.6 }
         ];
 
         starConfigs.forEach((cfg, idx) => {
             const geo = new THREE.BufferGeometry();
             const positions = new Float32Array(cfg.count * 3);
-            const phase = new Float32Array(cfg.count); // 每颗星的“呼吸相位”
 
             for (let i = 0; i < cfg.count; i++) {
-                positions[i * 3] = (Math.random() - 0.5) * 900;
-                positions[i * 3 + 1] = (Math.random() - 0.5) * 900;
-                positions[i * 3 + 2] = (Math.random() - 0.5) * 900;
-                phase[i] = Math.random() * Math.PI * 2;
+                // 半径范围也略微缩小一点
+                positions[i * 3] = (Math.random() - 0.5) * 700;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * 700;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 700;
             }
 
             geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-            geo.setAttribute("phase", new THREE.BufferAttribute(phase, 1));
 
             const mat = new THREE.PointsMaterial({
                 size: cfg.size,
@@ -735,13 +722,12 @@ body, html {
             const cloud = new THREE.Points(geo, mat);
             cloud.userData.twinkleSpeed = cfg.speed;
             cloud.userData.baseOpacity = 0.35 + idx * 0.08;
-            cloud.userData.layerIndex = idx;
             starLayers.push(cloud);
             scene.add(cloud);
         });
 
-        /* ========== 5. 流星，稍微柔一点 ========== */
-        for (let i = 0; i < 8; i++) {
+        /* ========== 5. 流星数量不变，但效果更轻一点 ========== */
+        for (let i = 0; i < 6; i++) { // 从 8 降到 6
             const sGeo = new THREE.BufferGeometry();
             sGeo.setAttribute(
                 "position",
@@ -750,7 +736,7 @@ body, html {
             const sStar = new THREE.Points(
                 sGeo,
                 new THREE.PointsMaterial({
-                    size: 2.2,
+                    size: 2.0,
                     color: 0xffffff,
                     transparent: true,
                     opacity: 0
@@ -761,7 +747,7 @@ body, html {
             triggerShootingStar(sStar);
         }
 
-        /* ========== 6. 灯光：粉光 + 蓝光打在主星球上 ========== */
+        /* ========== 6. 灯光保持原有风格 ========== */
         scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
         const pinkLight = new THREE.PointLight(0xff66cc, 2.2, 260);
@@ -772,67 +758,25 @@ body, html {
         cyanLight.position.set(-35, -20, -40);
         scene.add(cyanLight);
 
-        /* ========== 7. 绑定：点击 canvas 上的星球 -> 打开画廊 ========== */
-    // renderer.domElement.addEventListener("click", onCanvasClick);
-window.addEventListener("click", onCanvasClick);
-
-        // 绑定画廊按钮
-        const overlay = document.getElementById("gallery-overlay");
-        const closeBtn = document.getElementById("gallery-close");
-        const nextBtn = document.getElementById("gallery-next");
-        const prevBtn = document.getElementById("gallery-prev");
-        const img = document.getElementById("gallery-image");
-
-        if (closeBtn) closeBtn.addEventListener("click", closeGallery);
-        if (nextBtn) nextBtn.addEventListener("click", nextImage);
-        if (prevBtn) prevBtn.addEventListener("click", prevImage);
-
-        if (overlay) {
-            // 点黑色背景也可以关闭
-            overlay.addEventListener("click", (e) => {
-                if (e.target.id === "gallery-overlay") {
-                    closeGallery();
-                }
-            });
-        }
-
-        if (img) {
-            // 点击图片：缩略图 <-> 放大
-            img.addEventListener("click", () => {
-                const isFull = img.dataset.full === "1";
-                if (isFull) {
-                    img.dataset.full = "0";
-                    img.style.maxHeight = "70vh";
-                    img.classList.remove("cursor-zoom-out");
-                    img.classList.add("cursor-zoom-in");
-                } else {
-                    img.dataset.full = "1";
-                    img.style.maxHeight = "90vh";
-                    img.classList.remove("cursor-zoom-in");
-                    img.classList.add("cursor-zoom-out");
-                }
-            });
-        }
-
         animate();
     }
 
     function triggerShootingStar(star) {
-        const startX = (Math.random() - 0.5) * 400;
-        const startY = 140 + Math.random() * 120;
+        const startX = (Math.random() - 0.5) * 320;
+        const startY = 120 + Math.random() * 120;
         const startZ = (Math.random() - 0.5) * 120;
         star.position.set(startX, startY, startZ);
 
-        const duration = 1.1 + Math.random() * 1.2;
-        const delay = Math.random() * 8;
+        const duration = 1.0 + Math.random() * 1.0;
+        const delay = Math.random() * 6;
 
         gsap.to(star.position, {
-            x: startX - 260,
-            y: startY - 360,
+            x: startX - 220,
+            y: startY - 320,
             duration,
             delay,
             onStart: () => {
-                star.material.opacity = 0.9;
+                star.material.opacity = 0.85;
             },
             onComplete: () => {
                 star.material.opacity = 0;
@@ -845,23 +789,20 @@ window.addEventListener("click", onCanvasClick);
         requestAnimationFrame(animate);
         const t = clock.getElapsedTime();
 
-        // 主星球轻轻旋转+呼吸
         if (globe) {
             globe.rotation.y += 0.003;
-            globe.rotation.x = 0.15 * Math.sin(t * 0.2);
+            globe.rotation.x = 0.12 * Math.sin(t * 0.25);
         }
 
-        // 多层星空：慢慢转 + 轻微闪烁
         starLayers.forEach((cloud, idx) => {
-            cloud.rotation.y += 0.00015 * (idx + 1);
-            cloud.rotation.x += 0.00005 * (idx + 1);
+            cloud.rotation.y += 0.00012 * (idx + 1);
+            cloud.rotation.x += 0.00004 * (idx + 1);
 
             const speed = cloud.userData.twinkleSpeed;
             const base = cloud.userData.baseOpacity;
-            cloud.material.opacity = base + 0.25 * Math.sin(t * speed + idx);
+            cloud.material.opacity = base + 0.22 * Math.sin(t * speed + idx);
         });
 
-        // 环与小行星
         orbitingObjects.forEach((obj) => {
             if (obj.isRing) {
                 obj.mesh.rotation.z += obj.mesh.userData.spin;
@@ -877,70 +818,6 @@ window.addEventListener("click", onCanvasClick);
         renderer.render(scene, camera);
     }
 
-    // ========== 点击星球 -> 触发 3D 选取 ==========
-    function onCanvasClick(event) {
-        const rect = renderer.domElement.getBoundingClientRect();
-        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-        raycaster.setFromCamera(mouse, camera);
-
-        // 只让“行星”（非光环）可点
-        const planetMeshes = orbitingObjects
-            .filter(o => !o.isRing)
-            .map(o => o.mesh);
-
-        const intersects = raycaster.intersectObjects(planetMeshes);
-
-        if (intersects.length > 0) {
-            showGallery();
-        }
-    }
-
-    // ========== 画廊相关函数 ==========
-    function showGallery() {
-        const overlay = document.getElementById("gallery-overlay");
-        const img = document.getElementById("gallery-image");
-        if (!overlay || !img || galleryImages.length === 0) return;
-
-        currentImageIndex = 0;
-        updateGalleryImage();
-
-        overlay.classList.remove("hidden");
-        overlay.classList.add("flex");
-    }
-
-    function updateGalleryImage() {
-        const img = document.getElementById("gallery-image");
-        if (!img) return;
-        img.src = galleryImages[currentImageIndex];
-        img.dataset.full = "0";
-        img.style.maxHeight = "70vh";
-        img.classList.remove("cursor-zoom-out");
-        img.classList.add("cursor-zoom-in");
-    }
-
-    function closeGallery() {
-        const overlay = document.getElementById("gallery-overlay");
-        if (!overlay) return;
-        overlay.classList.add("hidden");
-        overlay.classList.remove("flex");
-    }
-
-    function nextImage() {
-        if (galleryImages.length === 0) return;
-        currentImageIndex = (currentImageIndex + 1) % galleryImages.length;
-        updateGalleryImage();
-    }
-
-    function prevImage() {
-        if (galleryImages.length === 0) return;
-        currentImageIndex =
-            (currentImageIndex - 1 + galleryImages.length) % galleryImages.length;
-        updateGalleryImage();
-    }
-
-    // ========== 原来的 UI 面板控制，不动 ==========
     function openPanel(id) {
         closeAll();
         const panel = document.getElementById(id);
@@ -972,84 +849,10 @@ window.addEventListener("click", onCanvasClick);
 
     window.onload = init;
     window.onresize = () => {
-
-        window.onload = init;
-        window.onresize = () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        };
-
-        /* ========== Art lightbox ========== */
-        const artworks = [
-            { src: "heart_1.jpg", title: "HEART I" },
-            { src: "heart_2.jpg", title: "HEART II" },
-            { src: "heart_3.jpg", title: "HEART III" }
-        ];
-
-        let currentArtIndex = 0;
-
-        function showArt(index) {
-            const lightbox = document.getElementById("art-lightbox");
-            const img = document.getElementById("lightbox-image");
-            const caption = document.getElementById("lightbox-caption");
-
-            currentArtIndex = (index + artworks.length) % artworks.length;
-            const art = artworks[currentArtIndex];
-
-            img.src = art.src;
-            img.alt = art.title;
-            caption.textContent = art.title;
-
-            lightbox.classList.remove("hidden");
-            lightbox.classList.add("flex");
-        }
-
-        function openArt(index) {
-            showArt(index);
-        }
-
-        function closeArt() {
-            const lightbox = document.getElementById("art-lightbox");
-            lightbox.classList.add("hidden");
-            lightbox.classList.remove("flex");
-        }
-
-        function nextArt() {
-            showArt(currentArtIndex + 1);
-        }
-
-        function prevArt() {
-            showArt(currentArtIndex - 1);
-        }
-
-        function lightboxBgClick(e) {
-            // 点击黑色背景时关闭；点击内部内容不关闭
-            if (e.target.id === "art-lightbox") {
-                closeArt();
-            }
-        }
-
-        // 键盘控制：Esc 关闭，左右键切换
-        window.addEventListener("keydown", (e) => {
-            const lightbox = document.getElementById("art-lightbox");
-            const isOpen = !lightbox.classList.contains("hidden");
-            if (!isOpen) return;
-
-            if (e.key === "Escape") {
-                closeArt();
-            } else if (e.key === "ArrowRight") {
-                nextArt();
-            } else if (e.key === "ArrowLeft") {
-                prevArt();
-            }
-        });
-
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
     };
 </script>
-
 </body>
 </html>
