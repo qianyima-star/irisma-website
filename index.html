@@ -840,6 +840,16 @@
       });
     }
 
+
+// ✅ 放在 init() 之前（script 的最上面）
+const isMobile = matchMedia("(max-width: 768px)").matches;
+const isLowEnd = navigator.deviceMemory && navigator.deviceMemory <= 4;
+const preferLite = isMobile || isLowEnd;
+
+function init() {
+  // 这里就能用 preferLite 了
+}
+
     function init() {
       scene = new THREE.Scene();
 
@@ -848,7 +858,7 @@
 
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, preferLite ? 1.0 : 1.5));
       document.getElementById("canvas-container").appendChild(renderer.domElement);
 
       setProgress(18);
