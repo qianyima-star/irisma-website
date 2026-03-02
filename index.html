@@ -817,6 +817,11 @@
     </div>
   </div>
 
+  setTimeout(() => {
+  const loaderEl = document.getElementById("loader");
+  if (loaderEl) loaderEl.style.display = "none";
+}, 10000);
+
 <script>
 (() => {
   "use strict";
