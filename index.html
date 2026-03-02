@@ -59,19 +59,68 @@
 
 #static-planet::before{
   content:"";
-  width:min(52vw, 340px);
+  width:min(58vw, 380px);
   aspect-ratio:1/1;
   border-radius:50%;
   background:
-    radial-gradient(circle at 30% 25%, rgba(255,255,255,0.35), rgba(255,255,255,0) 35%),
-    radial-gradient(circle at 40% 40%, rgba(255,122,217,0.95), rgba(184,77,255,0.65) 55%, rgba(19,2,36,0.0) 75%),
-    radial-gradient(circle at 50% 50%, rgba(255,122,217,0.35), rgba(0,0,0,0) 70%);
+    radial-gradient(circle at 28% 22%, rgba(255,255,255,0.38), rgba(255,255,255,0) 32%),
+    radial-gradient(circle at 40% 45%, rgba(255,122,217,0.92), rgba(184,77,255,0.70) 52%, rgba(19,2,36,0) 74%),
+    radial-gradient(circle at 65% 62%, rgba(0,255,255,0.16), rgba(0,0,0,0) 55%),
+    radial-gradient(circle at 52% 55%, rgba(0,0,0,0.30), rgba(0,0,0,0) 58%),
+    radial-gradient(circle at 55% 60%, rgba(255,122,217,0.18), rgba(0,0,0,0) 70%);
   box-shadow:
-    0 40px 120px rgba(0,0,0,0.55),
-    0 0 60px rgba(255,0,127,0.18),
-    0 0 90px rgba(138,43,226,0.16);
-  filter:saturate(1.05);
+    0 55px 150px rgba(0,0,0,0.62),
+    0 0 70px rgba(255,0,127,0.22),
+    0 0 110px rgba(138,43,226,0.22),
+    inset -35px -45px 80px rgba(0,0,0,0.35);
+  filter:saturate(1.12) contrast(1.05);
   transform: translateY(10px);
+  animation: floatPlanet 7.5s ease-in-out infinite;
+}
+
+/* ring */
+#static-planet::after{
+  content:"";
+  position:absolute;
+  width:min(76vw, 520px);
+  height:min(20vw, 140px);
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: linear-gradient(90deg,
+    rgba(255,0,127,0.05),
+    rgba(0,255,255,0.10),
+    rgba(138,43,226,0.08));
+  box-shadow: 0 0 60px rgba(0,255,255,0.12);
+  transform: rotate(-14deg);
+  opacity: 0.9;
+  mix-blend-mode: screen;
+  pointer-events:none;
+}
+
+/* star dust overlay */
+#canvas-container{
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+#canvas-container::before{
+  content:"";
+  position:absolute;
+  inset:-40px;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(255,255,255,0.10), rgba(0,0,0,0) 40%),
+    radial-gradient(circle at 70% 30%, rgba(0,255,255,0.10), rgba(0,0,0,0) 42%),
+    radial-gradient(circle at 35% 80%, rgba(255,0,127,0.10), rgba(0,0,0,0) 45%);
+  filter: blur(14px);
+  opacity: 0.75;
+  pointer-events:none;
+  z-index: 1;
+}
+
+
+@keyframes floatPlanet{
+  0%,100%{ transform: translateY(10px); }
+  50%{ transform: translateY(-6px); }
 }
 
     /* Scroll content layer */
