@@ -1,1305 +1,857 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Qianyi Iris Ma | Scholar & Writer</title>
-
-  <script src="https://cdn.tailwindcss.com"></script>
- <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Montserrat:wght@200;300;400;600&display=swap" rel="stylesheet">
-
-  <style>
-    :root{
-      --pink:#ff007f;
-      --purple:#8a2be2;
-      --cyan:#00ffff;
-      --silver-galaxy: rgba(255,255,255,0.88);
-      --bg:#130224;
-      --cv-purple-dark:#1a0a33;
-      --cv-purple-mid:#4a148c;
-      --accent-line:#8a2be2;
-    }
-
-    html, body{
-      margin:0;
-      padding:0;
-      font-family:'Montserrat', sans-serif;
-      color:white;
-      background-color:var(--bg);
-      background-image: radial-gradient(circle at 20% 0%, #3a2370 0, #130224 40%, #050008 100%);
-      overflow-x:hidden;
-      overflow-y:auto;
-      min-height: 100svh;
-    }
-    @supports (min-height: 100dvh){
-      html, body{ min-height: 100dvh; }
-    }
-
-    /* Three.js background */
-    #canvas-container{
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 1;
-    }
-
-
-#static-planet{
-  position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:2;
-  pointer-events:none;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qianyi Iris Ma | Scholar & Writer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Montserrat:wght@200;300;400;600&display=swap" rel="stylesheet">
+    <style>
+       :root {
+    --pink: #ff007f;
+    --purple: #8a2be2;
+    --cyan: #00ffff;
+    --silver-galaxy: rgba(255, 255, 255, 0.88);
+    /* 稍微亮一点的宇宙底色 */
+    --bg: #130224;
+    --cv-purple-dark: #1a0a33;
+    --cv-purple-mid: #4a148c;
+    --accent-line: #8a2be2;
 }
 
-#static-planet::before{
-  content:"";
-  width:min(58vw, 380px);
-  aspect-ratio:1/1;
-  border-radius:50%;
-  background:
-    radial-gradient(circle at 28% 22%, rgba(255,255,255,0.38), rgba(255,255,255,0) 32%),
-    radial-gradient(circle at 40% 45%, rgba(255,122,217,0.92), rgba(184,77,255,0.70) 52%, rgba(19,2,36,0) 74%),
-    radial-gradient(circle at 65% 62%, rgba(0,255,255,0.16), rgba(0,0,0,0) 55%),
-    radial-gradient(circle at 52% 55%, rgba(0,0,0,0.30), rgba(0,0,0,0) 58%),
-    radial-gradient(circle at 55% 60%, rgba(255,122,217,0.18), rgba(0,0,0,0) 70%);
-  box-shadow:
-    0 55px 150px rgba(0,0,0,0.62),
-    0 0 70px rgba(255,0,127,0.22),
-    0 0 110px rgba(138,43,226,0.22),
-    inset -35px -45px 80px rgba(0,0,0,0.35);
-  filter:saturate(1.12) contrast(1.05);
-  transform: translateY(10px);
-  animation: floatPlanet 7.5s ease-in-out infinite;
+body, html {
+    margin: 0;
+    padding: 0;
+    /* 用渐变做一个淡淡的星云底 */
+    background-color: var(--bg);
+    background-image: radial-gradient(
+        circle at 20% 0%,
+        #3a2370 0,
+        #130224 40%,
+        #050008 100%
+    );
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    overflow: hidden;
+    height: 100vh;
 }
 
-/* ring */
-#static-planet::after{
-  content:"";
-  position:absolute;
-  width:min(76vw, 520px);
-  height:min(20vw, 140px);
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.16);
-  background: linear-gradient(90deg,
-    rgba(255,0,127,0.05),
-    rgba(0,255,255,0.10),
-    rgba(138,43,226,0.08));
-  box-shadow: 0 0 60px rgba(0,255,255,0.12);
-  transform: rotate(-14deg);
-  opacity: 0.9;
-  mix-blend-mode: screen;
-  pointer-events:none;
-}
+        #canvas-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 1;
+        }
 
-/* star dust overlay */
-#canvas-container{
-  position: fixed;
-  inset: 0;
-  overflow: hidden;
-}
-#canvas-container::before{
-  content:"";
-  position:absolute;
-  inset:-40px;
-  background:
-    radial-gradient(circle at 15% 20%, rgba(255,255,255,0.10), rgba(0,0,0,0) 40%),
-    radial-gradient(circle at 70% 30%, rgba(0,255,255,0.10), rgba(0,0,0,0) 42%),
-    radial-gradient(circle at 35% 80%, rgba(255,0,127,0.10), rgba(0,0,0,0) 45%);
-  filter: blur(14px);
-  opacity: 0.75;
-  pointer-events:none;
-  z-index: 1;
-}
+        .ui-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 50;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
 
+        .pointer-events-auto { pointer-events: auto !important; }
 
-@keyframes floatPlanet{
-  0%,100%{ transform: translateY(10px); }
-  50%{ transform: translateY(-6px); }
-}
+        .magic-glass {
+            background: var(--silver-galaxy);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 40px;
+            box-shadow: 0 40px 120px rgba(0, 0, 0, 0.6);
+            position: absolute;
+            z-index: 100;
+            display: none;
+            opacity: 0;
+            pointer-events: auto;
+            overflow-y: auto;
+            max-height: 75vh;
+            width: 90%;
+            max-width: 1000px;
+            color: var(--cv-purple-dark);
+            left: 50%;
+            top: 130px;
+            transform: translateX(-50%);
+        }
 
-    /* Scroll content layer */
-    .page{
-      position: relative;
-      z-index: 10;
-      min-height: 100svh;
-    }
-    @supports (min-height: 100dvh){
-      .page{ min-height: 100dvh; }
-    }
+        .font-cinzel { font-family: 'Cinzel', serif; }
+        .text-glow-pink { text-shadow: 0 0 15px var(--pink); color: white; }
 
-    .pointer-events-auto{ pointer-events:auto !important; }
-    .ui-shell{ pointer-events:none; }
+        .nav-btn {
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+            pointer-events: auto;
+            color: white;
+            font-size: 10px;
+        }
+        .nav-btn:hover {
+            color: var(--cyan);
+            border-bottom: 2px solid var(--cyan);
+            text-shadow: 0 0 8px var(--cyan);
+        }
 
-    .font-cinzel{ font-family:'Cinzel', serif; }
-    .text-glow-pink{ text-shadow: 0 0 15px var(--pink); color:white; }
+        .cv-section-title {
+            font-family: 'Cinzel', serif;
+            font-size: 0.9rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--cv-purple-mid);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding-bottom: 8px;
+            margin-bottom: 24px;
+            margin-top: 48px;
+            font-weight: 700;
+        }
 
-    /* Header */
-    .site-header{
-      pointer-events:auto;
-      position: absolute;
-      top: env(safe-area-inset-top);
-      left: 0;
-      right: 0;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 12px;
-      padding: 22px 18px 0 18px;
-      z-index: 20;
-    }
-    .site-nav{
-      display:flex;
-      gap: 14px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-    .nav-btn{
-      cursor:pointer;
-      transition: all .3s;
-      border-bottom: 2px solid transparent;
-      color:white;
-      font-size: 10px;
-      letter-spacing: .18em;
-      text-transform: uppercase;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-    .nav-btn:hover{
-      color: var(--cyan);
-      border-bottom-color: var(--cyan);
-      text-shadow: 0 0 8px var(--cyan);
-    }
-    @media (min-width: 768px){
-      .site-header{ padding: 40px 48px 0 48px; }
-      .site-nav{ gap: 28px; }
-      .nav-btn{ font-size: 9px; letter-spacing: .2em; }
-    }
+        .cv-item { margin-bottom: 32px; }
+        .cv-date { font-size: 0.75rem; color: #555; font-weight: 600; line-height: 1.6; }
+        .cv-content h4 { font-size: 1.05rem; font-weight: 700; color: #000; margin-bottom: 4px; }
+        .cv-content p { font-size: 0.9rem; line-height: 1.6; color: #333; }
 
-    /* ✅ HERO occupies full viewport: star planet stays unobstructed */
-    .hero{
-      pointer-events: auto;
-      position: relative;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      text-align:center;
-      padding: 0 18px;
-      min-height: 100svh;
-    }
-    @supports (min-height: 100dvh){
-      .hero{ min-height: 100dvh; }
-    }
+        .list-entry {
+            position: relative;
+            padding-left: 20px;
+            border-left: 2px solid var(--accent-line);
+            margin-bottom: 18px;
+            font-size: 0.88rem;
+            line-height: 1.7;
+            color: #111;
+        }
 
-    .hero-inner{
-      margin-top: clamp(24px, 6vh, 90px); /* pushes text slightly down from header */
-    }
+        .doi-link {
+            color: var(--purple);
+            text-decoration: none;
+            word-break: break-all;
+            font-size: 0.8rem;
+            display: block;
+            margin-top: 4px;
+            opacity: 0.7;
+        }
+        .doi-link:hover { opacity: 1; text-decoration: underline; }
 
-    .hero-kicker{
-      font-size: 10px;
-      letter-spacing: .55em;
-      text-transform: uppercase;
-      opacity: .55;
-      font-weight: 300;
-      margin-bottom: 14px;
-    }
-    .hero-title{
-      font-family:'Cinzel', serif;
-      font-style: italic;
-      font-size: clamp(44px, 9vw, 92px);
-      line-height: 1.02;
-      margin-bottom: 14px;
-      letter-spacing: -0.02em;
-    }
-    .hero-sub{
-      max-width: 860px;
-      margin: 0 auto;
-      font-size: 13px;
-      line-height: 1.8;
-      opacity: .78;
-    }
+        .creative-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            background: rgba(138, 43, 226, 0.1);
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--purple);
+            margin-bottom: 8px;
+        }
 
-    /* Scroll hint */
-    .scroll-hint{
-      position: absolute;
-      bottom: max(18px, env(safe-area-inset-bottom));
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 10px;
-      letter-spacing: .35em;
-      text-transform: uppercase;
-      opacity: .55;
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      pointer-events:auto;
-      cursor:pointer;
-      user-select:none;
-    }
-    .scroll-dot{
-      width: 6px; height: 6px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.65);
-      box-shadow: 0 0 12px rgba(0,255,255,0.35);
-      animation: pulse 1.4s infinite ease-in-out;
-    }
-    @keyframes pulse{
-      0%,100%{ transform: scale(1); opacity:.55; }
-      50%{ transform: scale(1.35); opacity:1; }
-    }
+        .scroll-container::-webkit-scrollbar { width: 4px; }
+        .scroll-container::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.1); border-radius: 10px; }
 
-    /* Sections */
-    .section{
-      pointer-events:auto;
-      padding: 40px 18px;
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-    @media (min-width: 768px){
-      .section{ padding: 64px 48px; }
-    }
-
-    .section-card{
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.14);
-      border-radius: 28px;
-      backdrop-filter: blur(16px);
-      box-shadow: 0 30px 90px rgba(0,0,0,0.35);
-      overflow:hidden;
-    }
-
-    .section-title{
-      font-family:'Cinzel', serif;
-      font-size: 14px;
-      letter-spacing: .32em;
-      text-transform: uppercase;
-      opacity: .85;
-    }
-    .section-sub{
-      margin-top: 10px;
-      font-size: 12px;
-      line-height: 1.9;
-      opacity: .7;
-    }
-
-    .work-grid{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap: 14px;
-      margin-top: 18px;
-    }
-    @media (min-width: 768px){
-      .work-grid{ grid-template-columns: repeat(3, 1fr); gap: 18px; }
-    }
-
-    .work-item{
-      border-radius: 18px;
-      overflow:hidden;
-      border: 1px solid rgba(255,255,255,0.14);
-      background: rgba(255,255,255,0.06);
-      transition: transform .25s ease, border-color .25s ease;
-      display:block;
-    }
-    .work-item:hover{
-      transform: translateY(-2px);
-      border-color: rgba(0,255,255,0.35);
-    }
-    .work-thumb{
-      width:100%;
-      aspect-ratio: 4 / 5;
-      object-fit: cover;
-      display:block;
-      background: rgba(0,0,0,0.18);
-    }
-    .work-meta{ padding: 12px 12px 14px 12px; }
-    .work-title{ font-size: 12px; font-weight: 700; line-height: 1.5; margin-bottom: 6px; }
-    .work-venue{ font-size: 10px; opacity: .75; line-height: 1.6; }
-    .work-link{
-      display:inline-block;
-      margin-top: 8px;
-      font-size: 10px;
-      letter-spacing: .18em;
-      text-transform: uppercase;
-      opacity: .8;
-      text-decoration: underline;
-      text-underline-offset: 3px;
-    }
-
-    /* Footer */
-    .site-footer{
-      pointer-events:auto;
-      padding: 18px 18px 36px 18px;
-      display:flex;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      opacity: .45;
-      font-size: 9px;
-      letter-spacing: .35em;
-      text-transform: uppercase;
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-    @media (min-width: 768px){
-      .site-footer{ padding: 18px 48px 54px 48px; }
-    }
-
-    /* Magic glass panels */
-    .magic-glass{
-      background: var(--silver-galaxy);
-      backdrop-filter: blur(30px);
-      border: 1px solid rgba(255, 255, 255, 0.5);
-      border-radius: 40px;
-      box-shadow: 0 40px 120px rgba(0, 0, 0, 0.6);
-      position: fixed;
-      z-index: 120;
-      display: none;
-      opacity: 0;
-      pointer-events: auto;
-      overflow-y: auto;
-      max-height: min(78vh, 900px);
-      width: min(1000px, calc(100% - 28px));
-      color: var(--cv-purple-dark);
-      left: 50%;
-      top: calc(env(safe-area-inset-top) + 90px);
-      transform: translateX(-50%);
-    }
-    .scroll-container::-webkit-scrollbar{ width:4px; }
-    .scroll-container::-webkit-scrollbar-thumb{ background: rgba(0,0,0,0.12); border-radius:10px; }
-
-    .cv-section-title{
-      font-family:'Cinzel', serif;
-      font-size: 0.9rem;
-      letter-spacing: 0.3em;
-      text-transform: uppercase;
-      color: var(--cv-purple-mid);
-      border-bottom: 1px solid rgba(0,0,0,0.1);
-      padding-bottom: 8px;
-      margin-bottom: 24px;
-      margin-top: 40px;
-      font-weight: 700;
-    }
-
-    .cv-item{ margin-bottom: 28px; }
-    .cv-date{ font-size: 0.75rem; color: #555; font-weight: 600; line-height: 1.6; }
-    .cv-content h4{ font-size: 1.05rem; font-weight: 700; color: #000; margin-bottom: 4px; }
-    .cv-content p{ font-size: 0.9rem; line-height: 1.6; color: #333; }
-
-    .list-entry{
-      position: relative;
-      padding-left: 20px;
-      border-left: 2px solid var(--accent-line);
-      margin-bottom: 14px;
-      font-size: 0.88rem;
-      line-height: 1.7;
-      color: #111;
-    }
-    .doi-link{
-      color: var(--purple);
-      text-decoration: none;
-      word-break: break-all;
-      font-size: 0.8rem;
-      display: block;
-      margin-top: 4px;
-      opacity: 0.7;
-    }
-    .doi-link:hover{ opacity: 1; text-decoration: underline; }
-
-    .creative-tag{
-      display: inline-block;
-      padding: 2px 8px;
-      background: rgba(138, 43, 226, 0.1);
-      border-radius: 4px;
-      font-size: 9px;
-      font-weight: 700;
-      text-transform: uppercase;
-      color: var(--purple);
-      margin-bottom: 8px;
-    }
-
-    /* Portrait */
-    .portrait-box{
-      width: 180px; height: 180px;
-      background: rgba(0,0,0,0.04);
-      border: 2px dashed rgba(138, 43, 226, 0.2);
-      border-radius: 50%;
-      display:flex; align-items:center; justify-content:center;
-      text-align:center; font-size: 10px;
-      color:#888;
-      transition: all 0.4s ease;
-      position: relative;
-      overflow:hidden;
-    }
-    @media (min-width: 768px){ .portrait-box{ width: 200px; height: 200px; } }
-    .portrait-box:hover{
-      border-color: var(--purple);
-      background: rgba(138, 43, 226, 0.05);
-      transform: scale(1.02);
-    }
-    .portrait-box img{
-      width:100%;
-      height:100%;
-      object-fit: cover;
-      border-radius: 50%;
-    }
-
-    /* Loader */
-    #loader{
-      position: fixed;
-      inset: 0;
-      z-index: 300;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      background: radial-gradient(circle at 20% 0%, #3a2370 0, #130224 45%, #050008 100%);
-    }
-    .loader-card{
-      width: min(520px, calc(100% - 40px));
-      border-radius: 28px;
-      border: 1px solid rgba(255,255,255,0.18);
-      background: rgba(255,255,255,0.06);
-      backdrop-filter: blur(16px);
-      padding: 22px 22px 18px 22px;
-      box-shadow: 0 30px 110px rgba(0,0,0,0.55);
-      text-align:center;
-    }
-    .loader-title{
-      font-family:'Cinzel', serif;
-      letter-spacing: .35em;
-      text-transform: uppercase;
-      font-size: 11px;
-      opacity: .85;
-    }
-    .loader-sub{
-      margin-top: 12px;
-      font-size: 12px;
-      opacity: .7;
-      line-height: 1.7;
-    }
-    .progress-wrap{
-      margin-top: 16px;
-      width: 100%;
-      height: 10px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.10);
-      overflow:hidden;
-      border: 1px solid rgba(255,255,255,0.10);
-    }
-    .progress-bar{
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, rgba(255,0,127,0.9), rgba(0,255,255,0.75));
-      border-radius: 999px;
-    }
-    .progress-text{
-      margin-top: 10px;
-      font-size: 10px;
-      letter-spacing: .22em;
-      text-transform: uppercase;
-      opacity: .55;
-    }
-
-    /* Lightbox (your original) */
-    #art-lightbox{
-      position: fixed;
-      inset: 0;
-      z-index: 200;
-      background: rgba(0,0,0,0.8);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding: 16px;
-    }
-  </style>
+        /* Portrait Styling */
+        .portrait-box {
+            width: 200px; height: 200px;
+            background: rgba(0,0,0,0.04);
+            border: 2px dashed rgba(138, 43, 226, 0.2);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; font-size: 10px;
+            color: #888; cursor: pointer;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .portrait-box:hover {
+            border-color: var(--purple);
+            background: rgba(138, 43, 226, 0.05);
+            transform: scale(1.02);
+        }
+        .portrait-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        .upload-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-weight: bold;
+            color: var(--purple);
+        }
+        .portrait-box:hover .upload-overlay { opacity: 1; }
+    </style>
 </head>
+<!-- Artwork Gallery Overlay -->
+<div id="gallery-overlay"
+     class="fixed inset-0 z-[120] hidden bg-black/80 backdrop-blur-sm items-center justify-center">
+  <div class="relative max-w-[90vw] max-h-[90vh] flex flex-col items-center">
+    <!-- 关闭按钮 -->
+    <button id="gallery-close"
+            class="absolute -top-10 right-0 text-[10px] tracking-[0.25em] uppercase text-white/70 hover:text-white">
+      Close ✕
+    </button>
 
+    <!-- 画作本体 -->
+    <img id="gallery-image"
+         src=""
+         alt="Artwork"
+         class="max-h-[70vh] rounded-3xl shadow-2xl border border-white/20 cursor-zoom-in transition-all duration-300" />
+
+    <!-- 上一张/下一张 -->
+    <div class="mt-4 flex gap-8 text-[10px] tracking-[0.3em] uppercase text-white/70 justify-center w-full">
+      <button id="gallery-prev" class="hover:text-white">◀ Prev</button>
+      <button id="gallery-next" class="hover:text-white">Next ▶</button>
+    </div>
+
+    <p class="mt-3 text-[9px] text-white/60 tracking-[0.2em] uppercase">
+      Click image to toggle zoom
+    </p>
+  </div>
+</div>
 <body>
 
-  <!-- Loader -->
-  <div id="loader">
-    <div class="loader-card">
-      <div class="loader-title">Stellar Studio — Initializing</div>
-      <div class="loader-sub">Loading starfield & archive interfaces…</div>
-      <div class="progress-wrap"><div id="progressBar" class="progress-bar"></div></div>
-      <div id="progressText" class="progress-text">0%</div>
-    </div>
-  </div>
+    <div id="canvas-container"></div>
 
-  <!-- Three.js -->
- <div id="canvas-container">
-  <div id="static-planet" aria-hidden="true"></div>
+    <div class="ui-layer py-10">
+        <header class="w-full px-12 flex justify-between items-center pointer-events-auto">
+            <div class="font-cinzel text-xl tracking-[0.3em] text-glow-pink cursor-pointer" onclick="closeAll()">QIANYI IRIS MA</div>
+            <nav class="flex space-x-8 text-[9px] tracking-[0.2em] uppercase font-bold">
+                <span class="nav-btn" onclick="openPanel('about')">About Me</span>
+                <span class="nav-btn" onclick="openPanel('cv')">Academic CV</span>
+                <span class="nav-btn" onclick="openPanel('creative')">Creative Works</span>
+                <span class="nav-btn" onclick="openPanel('contact')">Connect</span>
+            </nav>
+        </header>
+
+        <main id="home-content" class="text-center pointer-events-auto mt-24">
+            <h2 class="text-[9px] tracking-[0.8em] uppercase opacity-50 mb-4 font-light text-white">Scholar • Writer • Mythmaker</h2>
+            <h1 class="font-cinzel text-5xl md:text-8xl italic mb-6 text-white tracking-tight">Qianyi Iris Ma</h1>
+        </main>
+
+        <footer class="w-full px-12 flex justify-between items-center text-[8px] tracking-[0.4em] opacity-40 uppercase pointer-events-auto text-white">
+            <div>Hong Kong • Los Angeles • Xi'an</div>
+            <div>© 2026 QIANYI IRIS MA | STELLAR STUDIO</div>
+        </footer>
+    </div>
+
+    <div class="fixed inset-0 z-[100] pointer-events-none">
+
+              <!-- About Me Section -->
+        <div id="about" class="magic-glass p-12 md:p-16 scroll-container">
+            <div class="flex justify-between items-start mb-10">
+                <h3 class="font-cinzel text-sm tracking-widest uppercase opacity-60">Archive: Profile</h3>
+                <button onclick="closeAll()" class="text-[9px] tracking-widest opacity-40 hover:opacity-100 uppercase underline">
+                    Back to Space
+                </button>
+            </div>
+
+            <div class="grid md:grid-cols-12 gap-12">
+                <!-- Left column: portrait + basic info -->
+                <div class="md:col-span-4 flex flex-col items-center md:items-start">
+                    <div class="portrait-box mb-8">
+                        <!-- 确保 me.jpeg 与 index.html 在同一目录 -->
+                        <img id="userPortrait" src="me.jpeg" alt="Portrait of Qianyi Iris Ma">
+                    </div>
+
+                    <div class="text-center md:text-left">
+                        <h4 class="font-cinzel text-2xl mb-1 tracking-widest uppercase">Qianyi Iris Ma</h4>
+                        <div class="space-y-2 opacity-80 text-[11px] font-medium mt-4">
+                            <p>PhD Candidate @ CUHK</p>
+                            <p>Visiting Researcher @ UCLA (2025–26)</p>
+                            <p>MFA @ CalArts</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right column: bio text -->
+                <div class="md:col-span-8 space-y-8">
+                    <section class="bio-text text-black font-light space-y-6">
+                        <p class="text-xl font-light italic text-purple-900 leading-tight">
+                            I’m Qianyi Iris Ma, a writer and scholar orbiting between Hong Kong, Los Angeles, and imaginary worlds.
+                        </p>
+                        <p class="text-base leading-relaxed">
+                            I study how Chinese myths and folklore shapeshift in contemporary Anglophone fiction—especially stories of
+                            <b>“shapeshifting heroines”</b> who cross borders between girl, ghost, goddess, and monster.
+                        </p>
+                        <p class="text-base leading-relaxed">
+                            I am currently completing a PhD in English Literary Studies at the
+                            <b>Chinese University of Hong Kong</b>, with a dissertation titled
+                            <i>Negotiating the Unhomed Shapeshifting Chinese Heroines</i>.
+                        </p>
+                        <p class="text-base leading-relaxed">
+                            Alongside the dissertation, I’m writing a novella titled <i>Ghost Goddesses</i> and developing a second research stream
+                            on AI and the humanities, exploring how large language models read, misread, and emotionally perform stories about AI.
+                        </p>
+                    </section>
+                </div>
+            </div>
+        </div>
+        <!-- Academic CV Section -->
+        <div id="cv" class="magic-glass p-12 md:p-20 scroll-container">
+            <div class="flex justify-between items-baseline mb-12">
+                <h2 class="font-cinzel text-2xl italic tracking-tight uppercase">Academic Curriculum Vitae</h2>
+                <button onclick="closeAll()" class="text-[9px] tracking-widest opacity-40 hover:opacity-100 uppercase underline">Close Archive</button>
+            </div>
+
+            <div class="mb-12 border-b border-black/10 pb-8">
+                <h3 class="font-cinzel text-4xl uppercase tracking-widest mb-4">QIANYI (IRIS) MA</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px] tracking-wider font-medium opacity-80">
+                    <div class="space-y-1">
+                        <p>ORCID: 0009-0003-9740-2910</p>
+                        <p>qianyima@link.cuhk.edu.hk</p>
+                    </div>
+                    <div class="md:text-right space-y-1">
+                        <p>Born Apr 1997, Xi’an, China</p>
+                        <p class="uppercase text-purple-800 font-bold mt-2">Research Interests:</p>
+                        <p>Chinese myth studies; Asian American and diasporic Chinese narratives; speculative fiction; mythological retellings; transpacific Anglophone Chinese writing; AI and humanities.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Education -->
+            <div class="cv-section-title">Education</div>
+            <div class="space-y-8">
+                <div class="grid md:grid-cols-4 gap-4 cv-item">
+                    <div class="cv-date">08/2022 – 06/2026<br>Hong Kong</div>
+                    <div class="md:col-span-3 cv-content">
+                        <h4>Chinese University of Hong Kong (CUHK)</h4>
+                        <p>Doctor of Philosophy (PhD) in English – Literary Studies | GPA: 4.0/4.0</p>
+                        <p class="text-xs italic text-gray-600 mt-1">Supervisors: Eddie Tay and Joanna Mansbridge</p>
+                        <p class="text-xs font-semibold mt-1 italic">Dissertation: Negotiating the Unhomed Shapeshifting Chinese Heroines</p>
+                    </div>
+                </div>
+                <div class="grid md:grid-cols-4 gap-4 cv-item">
+                    <div class="cv-date">09/2019 – 12/2021<br>Los Angeles, USA</div>
+                    <div class="md:col-span-3 cv-content">
+                        <h4>California Institute of the Arts (CalArts)</h4>
+                        <p>Master of Fine Arts (MFA) in Creative Writing | GPA: 4.0/4.0</p>
+                    </div>
+                </div>
+                <div class="grid md:grid-cols-4 gap-4 cv-item">
+                    <div class="cv-date">09/2015 – 06/2019<br>Shanghai, China</div>
+                    <div class="md:col-span-3 cv-content">
+                        <h4>Shanghai International Studies University (SISU)</h4>
+                        <p>Bachelor of Arts (BA) in Broadcast Journalism | GPA: 3.8/4.0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Academic Appointments -->
+            <div class="cv-section-title">Academic Appointments</div>
+            <div class="space-y-8">
+                <div class="grid md:grid-cols-4 gap-4 cv-item">
+                    <div class="cv-date">09/2025 – 06/2026<br>Los Angeles, USA</div>
+                    <div class="md:col-span-3 cv-content">
+                        <h4>University of California, Los Angeles (UCLA)</h4>
+                        <p>Visiting Graduate Researcher @ UCLA Center for Chinese Studies</p>
+                        <p class="text-xs italic text-gray-600 mt-1">Supervisor: Stephanie Balkwill</p>
+                    </div>
+                </div>
+                <div class="grid md:grid-cols-4 gap-4 cv-item">
+                    <div class="cv-date">09/2022 – 09/2025<br>Hong Kong</div>
+                    <div class="md:col-span-3 cv-content">
+                        <h4>Chinese University of Hong Kong (CUHK)</h4>
+                        <p>Teaching Assistant, Department of English</p>
+                        <p class="text-xs opacity-80 mt-1">Supported English-medium undergraduate courses (Introduction to Literature, Children’s Literature, Special Topics in Creative Writing, Reading and Writing Short Stories).</p>
+                    </div>
+                </div>
+                <div class="grid md:grid-cols-4 gap-4 cv-item">
+                    <div class="cv-date">06/2018 – 10/2018<br>Toronto, Canada</div>
+                    <div class="md:col-span-3 cv-content">
+                        <h4>Ontario College of Art & Design University (OCAD U)</h4>
+                        <p>Research Assistant, Visual Analytics Lab</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Awards -->
+            <div class="cv-section-title">Honors & Awards</div>
+            <div class="space-y-3">
+                <div class="list-entry">09/2025 PAMLA Conference Graduate Student Scholarship</div>
+                <div class="list-entry">05/2025 CUHK PhD International Mobility Award (HKD 43,000)</div>
+                <div class="list-entry">05/2025 CUHK Reaching Out Award (HKD 10,000)</div>
+                <div class="list-entry">05/2024 Zhilan Scholarship for the Study of Chinese Culture 2023-24 (HKD 50,000)</div>
+                <div class="list-entry">01/2018 Mitacs Globalink Research Internship Award</div>
+            </div>
+
+            <!-- Publications -->
+            <div class="cv-section-title">Publications</div>
+            <h5 class="text-[10px] uppercase font-bold text-purple-900 mb-6">Peer-Reviewed Journal Articles</h5>
+            <div class="space-y-4">
+                <div class="list-entry">
+                    Qianyi Ma. (2025). “A Genealogy of Fish Women and Other Imagined Identities: ‘The Mechanics of Fluids’ in Larissa Lai’s <i>Salt Fish Girl</i>.” <i>Orbis Litterarum</i> (AHCI-indexed).
+                    <a href="https://doi.org/10.1111/oli.12480" class="doi-link" target="_blank">https://doi.org/10.1111/oli.12480</a>
+                </div>
+                <div class="list-entry">
+                    Qianyi Ma. (2025). “Navigating the Chinese Hui Diaspora in Middle-Grade Fantasy: Intersecting Marginalizations in <i>Zachary Ying and the Dragon Emperor</i>.” <i>Children’s Literature in Education</i> (AHCI-indexed).
+                    <a href="https://doi.org/10.1007/s10583-025-09644-9" class="doi-link" target="_blank">https://doi.org/10.1007/s10583-025-09644-9</a>
+                </div>
+                <div class="list-entry">
+                    Qianyi Ma. (2025). “Serpentine Sisters: Re-visioning the Snake Woman Myth in Anglophone Chinese Women’s Speculative Fiction.” Invited contribution to <i>Defiant Asymmetries: Asian American Literature Without Borders</i>, guest edited by King-Kok Cheung. <i>Literature</i>.
+                    <a href="https://doi.org/10.3390/literature6010001" class="doi-link" target="_blank">https://doi.org/10.3390/literature6010001</a>
+                </div>
+            </div>
+
+            <h5 class="text-[10px] uppercase font-bold text-purple-900 mt-10 mb-6">Manuscripts Under Review</h5>
+            <div class="space-y-2 opacity-80">
+                <div class="list-entry">“Reading AI with AI: Alignment Ethics and Affective Performance in ChatGPT’s Self-Reflexive Interpretations.” (<i>Convergence</i>)</div>
+                <div class="list-entry">“Against Exorcism: Haunting as Feminist Epistemology in <i>The Woman Warrior</i> and <i>The Ghost Bride</i>.” (<i>Contemporary Women’s Writing</i>)</div>
+                <div class="list-entry">“Do Queer Feminist Readings Travel? AI-Assisted Mapping of Anglophone Online Reception.” (<i>Digital Scholarship in the Humanities</i>)</div>
+            </div>
+
+            <!-- Conferences & Exhibitions Section -->
+            <div class="cv-section-title">Conference & Exhibitions</div>
+
+            <h5 class="text-[10px] uppercase font-bold text-purple-900 mb-6">Conference Presentations</h5>
+            <div class="space-y-4">
+                <div class="list-entry">“Rewriting Chinese History and Mythology through Fantasy: Xiran Jay Zhao’s <i>Iron Widow</i> Series.” 122nd Annual Conference of Pacific Ancient and Modern Language Association (PAMLA). November 20-23, 2025.</div>
+                <div class="list-entry">“Shapeshifting and Boundary-Crossing: From ’Madam White is Kept Forever under the Thunder Peak Tower’ to Her Adventures in <i>Serpentine</i> and <i>Sacrifice</i>.” AAS-in-Asia 2025. June 1-4, 2025.</div>
+                <div class="list-entry">“The Traveling Chinese Snake Woman.” 56th Annual Convention of the Northeast Modern Language Association (NeMLA). March 6–9, 2025.</div>
+                <div class="list-entry">“Revolutionary Sisterhood: the Chinese Snake Woman and the Lesbian Girl in Cindy Pon’s <i>Serpentine</i> and <i>Sacrifice</i>.” The Barcelona Conference on Arts, Media & Culture (IAFOR-BAMC 2024). November 12-16, 2024.</div>
+                <div class="list-entry">A short story - “Daughter of the Sea,” <i>Ecopoetics and Environmental Artivism</i> (organized by London Arts-Based Research Centre), July 11-12, 2024.</div>
+                <div class="list-entry">“The World Divided: A Short Graphic Fiction,” <i>Beyond the Comic Strip: Exploring Graphic Narratives and Arts-Based Research</i> (organized by London Arts-Based Research Centre), June 26-27, 2024.</div>
+                <div class="list-entry">“Queering the Abject: ’The Mechanics of Fluids’ in Larissa Lai’s <i>Salt Fish Girl</i>,” 55th Annual Convention of the Northeast Modern Language Association (NeMLA), March 7-10, 2024.</div>
+            </div>
+
+            <h5 class="text-[10px] uppercase font-bold text-purple-900 mt-10 mb-6">Session Chairing and Organization</h5>
+            <div class="space-y-4">
+                <div class="list-entry"><b>Session Chair and Organizer:</b> “Recasting Kinship and Resistance Across Trans-Pacific and Asian American Narratives.” Association for Asian American Studies (AAAS) Annual Conference, April 2-4, 2026.</div>
+                <div class="list-entry"><b>Session Chair and Co-Organizer:</b> “Rewriting and Inventing Myths in the Contemporary Chinese Fantasy Universe.” European Association for Chinese Studies (EACS) Conference, July 21-25, 2026.</div>
+                <div class="list-entry"><b>Session Chair and Organizer:</b> “Snake Sisters in Literature and Film Part I,” 56th Annual Convention of the Northeast Modern Language Association (NeMLA), March 6–9, 2025.</div>
+                <div class="list-entry"><b>Session Chair and Organizer:</b> “Snake Sisters in Literature and Film Part II,” 56th Annual Convention of the Northeast Modern Language Association (NeMLA), March 6–9, 2025.</div>
+                <div class="list-entry"><b>Session Chair:</b> Panel 3.B – “Literary Reflections on Nature and Climate Change: Ecopoetics and Environmental Artivism” (organized by London Arts-Based Research Centre), July 11–12, 2024.</div>
+            </div>
+
+            <div class="h-32"></div>
+        </div>
+
+        <!-- Creative Works Section -->
+        <div id="creative" class="magic-glass p-12 md:p-20 scroll-container">
+            <div class="flex justify-between items-baseline mb-16">
+                <h2 class="font-cinzel text-3xl italic tracking-tight uppercase">Creative Works</h2>
+                <button onclick="closeAll()" class="text-[9px] tracking-widest opacity-40 hover:opacity-100 uppercase underline">Exit</button>
+            </div>
+
+            <div class="cv-section-title">Novella & Long Fiction</div>
+            <div class="cv-item">
+                <span class="creative-tag">Part of PhD Thesis</span>
+                <h4>Ghost Goddesses (2022–2025)</h4>
+                <div class="list-entry">First novel reimagining the tragic fates of two Chinese goddesses, Ba and Luo Shen, through the perspective of a hybrid heroine navigating divinity, ghosthood, and humanity.</div>
+            </div>
+
+            <div class="cv-section-title">Short Story Collection</div>
+            <div class="cv-item">
+                <span class="creative-tag">MFA Thesis</span>
+                <h4>Lightless Blows (2019-2021)</h4>
+                <div class="list-entry">Includes: Bubbles, A Documentary Wandering at Midnight, Surrogate Friend, A Drowning Fish, Daughter of the Sea, The Wreck of Light, Invisible Snow, Beautiful Skin.</div>
+            </div>
+
+            <div class="cv-section-title">Exhibitions & Media</div>
+            <div class="grid md:grid-cols-2 gap-12">
+                <div class="cv-item">
+                    <span class="creative-tag">Film Exhibition</span>
+                    <h4>“Wander” (2020-2021)</h4>
+                    <p class="text-xs">Shown in DogStar Orchestra 17 and Feeler Gauge Festival. Experimenting with superimpositions and surreal sensations.</p>
+                </div>
+                <div class="cv-item">
+                    <span class="creative-tag">Art Show</span>
+                    <h4>Las Laguna Gallery: Painterly 2021</h4>
+                    <p class="text-xs">Acrylic painting ”Heart” was selected for this exhibition.</p>
+                </div>
+            </div>
+
+            <div class="cv-section-title">Picture Books (2018-2020)</div>
+            <div class="space-y-4">
+                <div class="list-entry">”Heart” : A girl rowing across the Milky Way, meeting herself inside.</div>
+                <div class="list-entry">”The World Divided” : A dystopian world that splits into two, the Tramp and the Fortress.</div>
+                <div class="list-entry">”Stumble into Neurons” : A fantasy adventure in the brain world of neurons.</div>
+                <div class="list-entry">”Fall into Hell” : A girl and Mr. Money’s travels around hell.</div>
+            </div>
+
+            <div class="h-32"></div>
+
+<!-- Paintings: Heart Series -->
+<div class="cv-section-title">Paintings – Heart Series</div>
+
+<div class="overflow-x-auto pb-4">
+  <div class="flex space-x-6 min-w-max">
+
+    <!-- Thumb 1 -->
+    <button type="button"
+            onclick="openArt(0)"
+            class="group block min-w-[220px] max-w-xs rounded-3xl overflow-hidden border border-white/15 bg-white/5 backdrop-blur-sm">
+      <img src="heart_1.jpg"
+           alt="Heart painting 1"
+           class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105" />
+      <div class="px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-white/70 group-hover:text-white">
+        HEART I
+      </div>
+    </button>
+
+    <!-- Thumb 2 -->
+    <button type="button"
+            onclick="openArt(1)"
+            class="group block min-w-[220px] max-w-xs rounded-3xl overflow-hidden border border-white/15 bg-white/5 backdrop-blur-sm">
+      <img src="heart_2.jpg"
+           alt="Heart painting 2"
+           class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105" />
+      <div class="px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-white/70 group-hover:text-white">
+        HEART II
+      </div>
+    </button>
+
+    <!-- Thumb 3 -->
+    <button type="button"
+            onclick="openArt(2)"
+            class="group block min-w-[220px] max-w-xs rounded-3xl overflow-hidden border border-white/15 bg-white/5 backdrop-blur-sm">
+      <img src="heart_3.jpg"
+           alt="Heart painting 3"
+           class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105" />
+      <div class="px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-white/70 group-hover:text-white">
+        HEART III
+      </div>
+    </button>
+
+  </div>
 </div>
 
-  <!-- Page -->
-  <div class="page ui-shell">
+<!-- 全屏画廊覆盖层 -->
+<div id="art-lightbox"
+     class="fixed inset-0 z-[120] bg-black/80 hidden items-center justify-center px-4"
+     onclick="lightboxBgClick(event)">
+  <div class="relative max-w-4xl w-full max-h-[90vh] bg-black/40 border border-white/20 rounded-3xl overflow-hidden flex flex-col">
 
-    <!-- Header (over hero) -->
-    <header class="site-header">
-      <div class="font-cinzel text-lg md:text-xl tracking-[0.3em] text-glow-pink cursor-pointer"
-           onclick="closeAll()">QIANYI IRIS MA</div>
+    <!-- 关闭按钮 -->
+    <button type="button"
+            onclick="closeArt(); event.stopPropagation();"
+            class="absolute top-3 right-4 text-white/70 hover:text-white text-2xl leading-none">
+      &times;
+    </button>
 
-      <nav class="site-nav">
-        <span class="nav-btn" onclick="openPanel('about')">About Me</span>
-        <span class="nav-btn" onclick="openPanel('cv')">Academic CV</span>
-        <span class="nav-btn" onclick="openPanel('creative')">Creative Works</span>
-        <span class="nav-btn" onclick="openPanel('contact')">Connect</span>
-      </nav>
-    </header>
-
-    <!-- ✅ Hero: first view is ONLY planet + your identity -->
-    <main id="home-content" class="hero">
-      <div class="hero-inner">
-        <div class="hero-kicker">Scholar • Writer • Mythmaker</div>
-        <h1 class="hero-title">Qianyi Iris Ma</h1>
-        <p class="hero-sub">
-          Chinese myth studies · Transpacific Anglophone writing · Women’s speculative fiction · AI & humanities
-        </p>
-      </div>
-
-      <div class="scroll-hint" onclick="scrollToWorks()">
-        <span class="scroll-dot"></span>
-        <span>Scroll</span>
-        <span style="opacity:.75;">↓</span>
-      </div>
-    </main>
-
-    <!-- ✅ Selected Works: only appears AFTER you scroll -->
-    <section id="selected-works" class="section">
-      <div class="section-card p-6 md:p-10">
-        <div class="section-title">Selected Works</div>
-        <div class="section-sub">
-          Representative publications and projects. Click the cover to open the DOI or page.
-        </div>
-
-        <div class="work-grid">
-          <a class="work-item" href="https://doi.org/10.1111/oli.12480" target="_blank" rel="noopener">
-            <img class="work-thumb" src="oli.png" alt="Orbis Litterarum article screenshot">
-            <div class="work-meta">
-              <div class="work-title">A Genealogy of Fish Women… in <i>Salt Fish Girl</i></div>
-              <div class="work-venue"><i>Orbis Litterarum</i> (2025) · AHCI-indexed</div>
-              <span class="work-link">Open DOI</span>
-            </div>
-          </a>
-
-          <a class="work-item" href="https://doi.org/10.1007/s10583-025-09644-9" target="_blank" rel="noopener">
-            <img class="work-thumb" src="cle.png" alt="Children’s Literature in Education article screenshot">
-            <div class="work-meta">
-              <div class="work-title">Navigating the Chinese Hui Diaspora… <i>Zachary Ying</i></div>
-              <div class="work-venue"><i>Children’s Literature in Education</i> (2025) · AHCI-indexed</div>
-              <span class="work-link">Open DOI</span>
-            </div>
-          </a>
-
-          <a class="work-item" href="https://doi.org/10.3390/literature6010001" target="_blank" rel="noopener">
-            <img class="work-thumb" src="mdpi.png" alt="Literature (MDPI) article screenshot">
-            <div class="work-meta">
-              <div class="work-title">Serpentine Sisters: Re-visioning the Snake Woman Myth</div>
-              <div class="work-venue"><i>Literature</i> (2025) · invited contribution</div>
-              <span class="work-link">Open DOI</span>
-            </div>
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <footer class="site-footer">
-      <div>Hong Kong • Los Angeles • Xi'an</div>
-      <div>© 2026 QIANYI IRIS MA | STELLAR STUDIO</div>
-    </footer>
-  </div>
-
-  <!-- Panels -->
-  <div class="fixed inset-0 z-[110] pointer-events-none">
-
-    <!-- About -->
-    <div id="about" class="magic-glass p-12 md:p-16 scroll-container">
-      <div class="flex justify-between items-start mb-10">
-        <h3 class="font-cinzel text-sm tracking-widest uppercase opacity-60">Archive: Profile</h3>
-        <button onclick="closeAll()" class="text-[9px] tracking-widest opacity-40 hover:opacity-100 uppercase underline">
-          Back to Space
-        </button>
-      </div>
-
-      <div class="grid md:grid-cols-12 gap-12">
-        <div class="md:col-span-4 flex flex-col items-center md:items-start">
-          <div class="portrait-box mb-8">
-            <img id="userPortrait" src="me.jpeg" alt="Portrait of Qianyi Iris Ma">
-          </div>
-
-          <div class="text-center md:text-left">
-            <h4 class="font-cinzel text-2xl mb-1 tracking-widest uppercase">Qianyi Iris Ma</h4>
-            <div class="space-y-2 opacity-80 text-[11px] font-medium mt-4">
-              <p>PhD Candidate @ CUHK</p>
-              <p>Visiting Researcher @ UCLA (2025–26)</p>
-              <p>MFA @ CalArts</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="md:col-span-8 space-y-8">
-          <section class="bio-text text-black font-light space-y-6">
-            <p class="text-xl font-light italic text-purple-900 leading-tight">
-              I’m Qianyi Iris Ma, a writer and scholar orbiting between Hong Kong, Los Angeles, and imaginary worlds.
-            </p>
-            <p class="text-base leading-relaxed">
-              I study how Chinese myths and folklore shapeshift in contemporary Anglophone fiction—especially stories of
-              <b>“shapeshifting heroines”</b> who cross borders between girl, ghost, goddess, and monster.
-            </p>
-            <p class="text-base leading-relaxed">
-              I am currently completing a PhD in English Literary Studies at the <b>Chinese University of Hong Kong</b>,
-              with a dissertation titled <i>Negotiating the Unhomed Shapeshifting Chinese Heroines</i>.
-            </p>
-            <p class="text-base leading-relaxed">
-              Alongside the dissertation, I’m writing a novella titled <i>Ghost Goddesses</i> and developing a second research stream
-              on AI and the humanities.
-            </p>
-          </section>
-        </div>
-      </div>
+    <!-- 图片区域 -->
+    <div class="flex-1 flex items-center justify-center bg-black">
+      <img id="lightbox-image"
+           src=""
+           alt=""
+           class="max-h-[80vh] max-w-full object-contain">
     </div>
 
-    <!-- ✅ Academic CV: restored from your CV PDF -->
-    <div id="cv" class="magic-glass p-12 md:p-20 scroll-container">
-      <div class="flex justify-between items-baseline mb-12">
-        <h2 class="font-cinzel text-2xl italic tracking-tight uppercase">Academic Curriculum Vitae</h2>
-        <button onclick="closeAll()" class="text-[9px] tracking-widest opacity-40 hover:opacity-100 uppercase underline">Close Archive</button>
-      </div>
+    <!-- 下方标题 + 左右箭头 -->
+    <div class="flex items-center justify-between px-6 py-3 bg-black/60 text-white text-xs tracking-[0.2em] uppercase">
+      <button type="button"
+              onclick="prevArt(); event.stopPropagation();"
+              class="px-2 py-1 hover:text-cyan-300">
+        &#10094; Prev
+      </button>
 
-      <div class="mb-10 border-b border-black/10 pb-8">
-        <h3 class="font-cinzel text-4xl uppercase tracking-widest mb-4">QIANYI (IRIS) MA</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px] tracking-wider font-medium opacity-80">
-          <div class="space-y-1">
-            <p>(+852) 5261 4892</p>
-            <p>qianyima@link.cuhk.edu.hk</p>
-            <p>linkedin.com/in/qianyi-ma</p>
-            <p>ORCID: 0009-0003-9740-2910</p>
-          </div>
-          <div class="md:text-right space-y-1">
-            <p class="uppercase text-purple-800 font-bold mt-2">Research Interests</p>
-            <p>Chinese myth studies; Asian American and diasporic Chinese narratives; women’s speculative fiction; mythological retellings; transpacific Anglophone Chinese writing; creative writing (fiction); AI and humanities.</p>
-          </div>
-        </div>
-      </div>
+      <div id="lightbox-caption" class="text-center flex-1"></div>
 
-      <div class="cv-section-title">Education</div>
-      <div class="space-y-8">
-        <div class="grid md:grid-cols-4 gap-4 cv-item">
-          <div class="cv-date">08/2022 – 06/2026<br>Hong Kong</div>
-          <div class="md:col-span-3 cv-content">
-            <h4>Chinese University of Hong Kong (CUHK)</h4>
-            <p>Doctor of Philosophy (PhD), English – Literary Studies | GPA: 4.0/4.0</p>
-            <p class="text-xs italic text-gray-600 mt-1">Supervisors: Eddie Tay and Joanna Mansbridge</p>
-            <p class="text-xs font-semibold mt-1 italic">Dissertation: Negotiating the Unhomed Shapeshifting Chinese Heroines</p>
-          </div>
-        </div>
-
-        <div class="grid md:grid-cols-4 gap-4 cv-item">
-          <div class="cv-date">09/2019 – 12/2021<br>Los Angeles, USA</div>
-          <div class="md:col-span-3 cv-content">
-            <h4>California Institute of the Arts (CalArts)</h4>
-            <p>Master of Fine Arts (MFA), Creative Writing | GPA: 4.0/4.0</p>
-            <p class="text-xs italic text-gray-600 mt-1">Supervisor: Brian Evenson</p>
-          </div>
-        </div>
-
-        <div class="grid md:grid-cols-4 gap-4 cv-item">
-          <div class="cv-date">09/2015 – 06/2019<br>Shanghai, China</div>
-          <div class="md:col-span-3 cv-content">
-            <h4>Shanghai International Studies University (SISU)</h4>
-            <p>Bachelor of Arts (BA), Broadcast Journalism | GPA: 3.8/4.0</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="cv-section-title">Academic Appointments</div>
-      <div class="space-y-6">
-        <div class="list-entry">
-          <b>UCLA</b>, Visiting Graduate Researcher, UCLA Center for Chinese Studies (09/2025–06/2026). Supervisor: Stephanie Balkwill.
-        </div>
-        <div class="list-entry">
-          <b>CUHK</b>, Teaching Assistant, Department of English (09/2022–09/2025). Supported English-medium undergraduate courses (Introduction to Literature, Children’s Literature, Special Topics in Creative Writing, Reading and Writing Short Stories).
-        </div>
-        <div class="list-entry">
-          <b>OCAD U</b>, Research Assistant, Visual Analytics Lab (06/2018–10/2018).
-        </div>
-      </div>
-
-      <div class="cv-section-title">Honors & Awards</div>
-      <div class="space-y-3">
-        <div class="list-entry">09/2025 PAMLA Conference Graduate Student Scholarship</div>
-        <div class="list-entry">05/2025 CUHK PhD International Mobility for Partnerships and Collaborations Award (HKD 43,000)</div>
-        <div class="list-entry">05/2025 CUHK Reaching Out Award (HKD 10,000)</div>
-        <div class="list-entry">05/2024 Zhilan Scholarship for the Study of Chinese Culture 2023-24 (HKD 50,000)</div>
-        <div class="list-entry">01/2018 Mitacs Globalink Research Internship Award</div>
-      </div>
-
-      <div class="cv-section-title">Publications</div>
-      <h5 class="text-[10px] uppercase font-bold text-purple-900 mb-6">Peer-Reviewed Journal Articles</h5>
-      <div class="space-y-4">
-        <div class="list-entry">
-          Qianyi Ma. (2025). “A Genealogy of Fish Women and Other Imagined Identities: ‘The Mechanics of Fluids’ in Larissa Lai’s <i>Salt Fish Girl</i>.” <i>Orbis Litterarum</i> (AHCI-indexed).
-          <a href="https://doi.org/10.1111/oli.12480" class="doi-link" target="_blank" rel="noopener">https://doi.org/10.1111/oli.12480</a>
-        </div>
-        <div class="list-entry">
-          Qianyi Ma. (2025). “Navigating the Chinese Hui Diaspora in Middle-Grade Fantasy: Intersecting Marginalizations in <i>Zachary Ying and the Dragon Emperor</i>.” <i>Children’s Literature in Education</i> (AHCI-indexed).
-          <a href="https://doi.org/10.1007/s10583-025-09644-9" class="doi-link" target="_blank" rel="noopener">https://doi.org/10.1007/s10583-025-09644-9</a>
-        </div>
-        <div class="list-entry">
-          Qianyi Ma. (2025). “Serpentine Sisters: Re-visioning the Snake Woman Myth in Anglophone Chinese Women’s Speculative Fiction.” Invited contribution to special issue <i>Defiant Asymmetries: Asian American Literature Without Borders</i>, guest edited by King-Kok Cheung. <i>Literature</i>.
-          <a href="https://doi.org/10.3390/literature6010001" class="doi-link" target="_blank" rel="noopener">https://doi.org/10.3390/literature6010001</a>
-        </div>
-      </div>
-
-      <h5 class="text-[10px] uppercase font-bold text-purple-900 mt-10 mb-6">Manuscripts Under Review</h5>
-      <div class="space-y-2 opacity-80">
-        <div class="list-entry">Qianyi Ma. “Reading AI with AI: Alignment Ethics and Affective Performance in ChatGPT’s Self-Reflexive Interpretations of AI Portrayals in Speculative Fiction.” <i>Convergence</i>. (Awaiting Reviewer Scores)</div>
-        <div class="list-entry">Qianyi Ma. “Against Exorcism: Haunting as Feminist Epistemology in <i>The Woman Warrior</i> and <i>The Ghost Bride</i>.” <i>Contemporary Women’s Writing</i>. (Awaiting Recommendation)</div>
-        <div class="list-entry">Qianyi Ma and Liuchao Jin. “Do Queer Feminist Readings Travel? AI-Assisted Mapping of Anglophone Online Reception of the White Snake Legend in Novel and Animation.” <i>Digital Scholarship in the Humanities</i>. (Submitted)</div>
-      </div>
-
-      <h5 class="text-[10px] uppercase font-bold text-purple-900 mt-10 mb-6">Selected Creative Publications</h5>
-      <div class="space-y-2 opacity-80">
-        <div class="list-entry">Qianyi Ma. “Daughter of the Sea” (short story). London Arts-Based Research Centre Publishing. Forthcoming.</div>
-      </div>
-
-      <div class="cv-section-title">Peer Review</div>
-      <div class="space-y-2 opacity-80">
-        <div class="list-entry">Reviewer, SN Social Sciences (Springer Nature), January 2026.</div>
-      </div>
-
-      <div class="cv-section-title">Conference & Exhibitions</div>
-      <h5 class="text-[10px] uppercase font-bold text-purple-900 mb-6">Conference Presentations</h5>
-      <div class="space-y-2 opacity-80">
-        <div class="list-entry">“Rewriting Chinese History and Mythology through Fantasy: Xiran Jay Zhao’s <i>Iron Widow</i> Series.” PAMLA, Nov 20–23, 2025.</div>
-        <div class="list-entry">“Shapeshifting and Boundary-Crossing: From ‘Madam White…’ to <i>Serpentine</i> and <i>Sacrifice</i>.” AAS-in-Asia, Jun 1–4, 2025.</div>
-        <div class="list-entry">“The Traveling Chinese Snake Woman.” NeMLA, Mar 6–9, 2025.</div>
-        <div class="list-entry">“Revolutionary Sisterhood: the Chinese Snake Woman and the Lesbian Girl in Cindy Pon’s <i>Serpentine</i> and <i>Sacrifice</i>.” IAFOR-BAMC, Nov 12–16, 2024.</div>
-        <div class="list-entry">Short story “Daughter of the Sea,” <i>Ecopoetics and Environmental Artivism</i>, Jul 11–12, 2024.</div>
-        <div class="list-entry">“The World Divided: A Short Graphic Fiction,” <i>Beyond the Comic Strip</i>, Jun 26–27, 2024.</div>
-        <div class="list-entry">“Queering the Abject: ‘The Mechanics of Fluids’ in Larissa Lai’s <i>Salt Fish Girl</i>.” NeMLA, Mar 7–10, 2024.</div>
-      </div>
-
-      <h5 class="text-[10px] uppercase font-bold text-purple-900 mt-10 mb-6">Session Chairing and Organization</h5>
-      <div class="space-y-2 opacity-80">
-        <div class="list-entry">Session Chair and Organizer: “Recasting Kinship and Resistance Across Trans-Pacific and Asian American Narratives.” AAAS Annual Conference, Apr 2–4, 2026.</div>
-        <div class="list-entry">Session Chair and Co-Organizer: “Rewriting and Inventing Myths in the Contemporary Chinese Fantasy Universe.” EACS Conference, Jul 21–25, 2026.</div>
-        <div class="list-entry">Session Chair and Organizer: “Snake Sisters in Literature and Film Part I.” NeMLA, Mar 6–9, 2025.</div>
-        <div class="list-entry">Session Chair and Organizer: “Snake Sisters in Literature and Film Part II.” NeMLA, Mar 6–9, 2025.</div>
-        <div class="list-entry">Session Chair: Panel 3.B – “Literary Reflections on Nature and Climate Change: Ecopoetics and Environmental Artivism.” Jul 11–12, 2024.</div>
-      </div>
-
-      <div class="h-20"></div>
-    </div>
-
-    <!-- ✅ Creative Works: restored from your CV PDF -->
-    <div id="creative" class="magic-glass p-12 md:p-20 scroll-container">
-      <div class="flex justify-between items-baseline mb-16">
-        <h2 class="font-cinzel text-3xl italic tracking-tight uppercase">Creative Works</h2>
-        <button onclick="closeAll()" class="text-[9px] tracking-widest opacity-40 hover:opacity-100 uppercase underline">Exit</button>
-      </div>
-
-      <div class="cv-section-title">Novella & Long Fiction</div>
-      <div class="cv-item">
-        <span class="creative-tag">Part of PhD Thesis</span>
-        <h4 class="text-black text-xl font-bold mb-2">Ghost Goddesses (2022–2025)</h4>
-        <div class="list-entry">First novel reimagining the tragic fates of two Chinese goddesses, Ba and Luo Shen, through the perspective of a hybrid heroine navigating divinity, ghosthood, and humanity.</div>
-      </div>
-
-      <div class="cv-section-title">MFA Thesis</div>
-      <div class="cv-item">
-        <span class="creative-tag">Short Story Collection</span>
-        <h4 class="text-black text-xl font-bold mb-2">Lightless Blows (2019–2021)</h4>
-        <div class="list-entry">Includes: <i>Bubbles</i>, <i>A Documentary Wandering at Midnight</i>, <i>Surrogate Friend</i>, <i>A Drowning Fish</i>, <i>Daughter of the Sea</i>, <i>The Wreck of Light</i>, <i>Invisible Snow</i>, <i>Beautiful Skin</i>.</div>
-      </div>
-
-      <div class="cv-section-title">Exhibitions & Media</div>
-      <div class="space-y-3">
-        <div class="list-entry"><b>Film Exhibition:</b> “Wander” (made in 2020, shown in 2021). Shown in DogStar Orchestra 17 and Feeler Gauge Festival; experimenting with superimpositions and surreal sensations.</div>
-        <div class="list-entry"><b>Las Laguna Gallery:</b> Painterly 2021 (Online Exhibition). Acrylic painting “Heart” selected.</div>
-      </div>
-
-      <div class="cv-section-title">Picture Books (2018–2020)</div>
-      <div class="space-y-3">
-        <div class="list-entry">“Heart”: A girl rowing across the Milky Way, meeting herself inside.</div>
-        <div class="list-entry">“The World Divided”: A dystopian world that splits into two, the Tramp and the Fortress.</div>
-        <div class="list-entry">“Stumble into Neurons”: A fantasy adventure in the brain world of neurons.</div>
-        <div class="list-entry">“Fall into Hell”: A girl and Mr. Money’s travels around hell, with themes of love, knowledge, and commercialism.</div>
-      </div>
-
-      <!-- Paintings – Heart Series (kept your original idea) -->
-      <div class="cv-section-title">Paintings – Heart Series</div>
-      <div class="overflow-x-auto pb-4">
-        <div class="flex space-x-6 min-w-max">
-          <button type="button" onclick="openArt(0)"
-            class="group block min-w-[220px] max-w-xs rounded-3xl overflow-hidden border border-white/15 bg-white/5 backdrop-blur-sm">
-            <img src="heart_1.jpg" alt="Heart painting 1"
-              class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105" />
-            <div class="px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-white/70 group-hover:text-white">HEART I</div>
-          </button>
-
-          <button type="button" onclick="openArt(1)"
-            class="group block min-w-[220px] max-w-xs rounded-3xl overflow-hidden border border-white/15 bg-white/5 backdrop-blur-sm">
-            <img src="heart_2.jpg" alt="Heart painting 2"
-              class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105" />
-            <div class="px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-white/70 group-hover:text-white">HEART II</div>
-          </button>
-
-          <button type="button" onclick="openArt(2)"
-            class="group block min-w-[220px] max-w-xs rounded-3xl overflow-hidden border border-white/15 bg-white/5 backdrop-blur-sm">
-            <img src="heart_3.jpg" alt="Heart painting 3"
-              class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105" />
-            <div class="px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-white/70 group-hover:text-white">HEART III</div>
-          </button>
-        </div>
-      </div>
-
-      <div class="h-20"></div>
-    </div>
-
-    <!-- Connect -->
-    <div id="contact" class="magic-glass p-16 md:p-24 text-center">
-      <h2 class="font-cinzel text-3xl mb-10 tracking-widest text-purple-950">Connect</h2>
-      <div class="space-y-6 text-black">
-        <p class="text-lg tracking-widest font-bold text-purple-700">qianyima@link.cuhk.edu.hk</p>
-        <div class="flex justify-center space-x-12 mt-10 text-[10px] uppercase tracking-[0.2em] font-bold opacity-70">
-          <span>Hong Kong</span><span>Los Angeles</span><span>Xi'an</span>
-        </div>
-      </div>
-      <button onclick="closeAll()" class="mt-14 text-[10px] uppercase underline tracking-widest opacity-40 hover:opacity-100 text-black">
-        Back to the Stars
+      <button type="button"
+              onclick="nextArt(); event.stopPropagation();"
+              class="px-2 py-1 hover:text-cyan-300">
+        Next &#10095;
       </button>
     </div>
   </div>
+</div>
 
-  <!-- Lightbox -->
-  <div id="art-lightbox" onclick="lightboxBgClick(event)">
-    <div class="relative max-w-4xl w-full max-h-[90vh] bg-black/40 border border-white/20 rounded-3xl overflow-hidden flex flex-col">
-      <button type="button" onclick="closeArt(); event.stopPropagation();"
-        class="absolute top-3 right-4 text-white/70 hover:text-white text-2xl leading-none">&times;</button>
+        </div>
 
-      <div class="flex-1 flex items-center justify-center bg-black">
-        <img id="lightbox-image" src="" alt="" class="max-h-[80vh] max-w-full object-contain">
-      </div>
-
-      <div class="flex items-center justify-between px-6 py-3 bg-black/60 text-white text-xs tracking-[0.2em] uppercase">
-        <button type="button" onclick="prevArt(); event.stopPropagation();" class="px-2 py-1 hover:text-cyan-300">&#10094; Prev</button>
-        <div id="lightbox-caption" class="text-center flex-1"></div>
-        <button type="button" onclick="nextArt(); event.stopPropagation();" class="px-2 py-1 hover:text-cyan-300">Next &#10095;</button>
-      </div>
+        <!-- Connect Section -->
+        <div id="contact" class="magic-glass p-24 text-center">
+            <h2 class="font-cinzel text-3xl mb-10 tracking-widest text-purple-950">Connect</h2>
+            <div class="space-y-6">
+                <p class="text-lg tracking-widest font-bold text-purple-700">qianyima@link.cuhk.edu.hk</p>
+                <div class="flex justify-center space-x-12 mt-16 text-[10px] uppercase tracking-[0.2em] font-bold">
+                    <span>Hong Kong</span>
+                    <span>Los Angeles</span>
+                    <span>Xi'an</span>
+                </div>
+            </div>
+            <button onclick="closeAll()" class="mt-20 text-[10px] uppercase underline tracking-widest opacity-40 hover:opacity-100">Back to the Stars</button>
+        </div>
     </div>
-  </div>
 
+     <script>
+    let scene, camera, renderer, globe;
+    let orbitingObjects = [];
+    let shootingStars = [];
+    let starLayers = [];
+    const clock = new THREE.Clock();
 
+    function init() {
+        scene = new THREE.Scene();
+        // 🔻 性能优化：先关掉雾，有需要再开
+        // scene.fog = new THREE.FogExp2(0x080118, 0.004);
 
-<script>
-(() => {
-  "use strict";
+        camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
+        camera.position.z = 45;
 
-  /* ========= DOM refs ========= */
-  const loaderEl = document.getElementById("loader");
-  const progressBar = document.getElementById("progressBar");
-  const progressText = document.getElementById("progressText");
-  const canvasHost = document.getElementById("canvas-container");
-  const staticPlanet = document.getElementById("static-planet");
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        // 🔻 性能优化：限制像素比，避免在高分屏上太吃力
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+        document.getElementById("canvas-container").appendChild(renderer.domElement);
 
-  function setProgress(p){
-    const pct = Math.max(0, Math.min(100, Math.round(p)));
-    if (progressBar) progressBar.style.width = pct + "%";
-    if (progressText) progressText.textContent = pct + "%";
-  }
+        /* ========== 1. 中间的主星球：稍微减细分 ========== */
+        const globeGeo = new THREE.SphereGeometry(12, 40, 40); // 原来 64,64
+        const globeMat = new THREE.MeshStandardMaterial({
+            color: 0xff7ad9,
+            emissive: 0xb84dff,
+            emissiveIntensity: 0.8,
+            roughness: 0.45,
+            metalness: 0.1,
+            transparent: true,
+            opacity: 0.95
+        });
+        globe = new THREE.Mesh(globeGeo, globeMat);
+        scene.add(globe);
 
-  function hideLoader(){
-    if (!loaderEl) return;
-    if (window.gsap && gsap.to) {
-      gsap.to(loaderEl, { opacity: 0, duration: 0.55, ease: "power2.out", onComplete: () => {
-        loaderEl.style.display = "none";
-      }});
-    } else {
-      loaderEl.style.opacity = "0";
-      loaderEl.style.display = "none";
-    }
-  }
+        /* ========== 2. 光环保持不变（只是轻微自转） ========== */
+        const ringConfigs = [
+            { radius: 18, color: 0xff9ad5, tilt: 0.9 },
+            { radius: 24, color: 0x9adfff, tilt: 1.2 }
+        ];
 
-  function fadeOutStaticPlanet(){
-    if (!staticPlanet) return;
-    staticPlanet.style.transition = "opacity 700ms ease";
-    staticPlanet.style.opacity = "0";
-    setTimeout(() => { staticPlanet.style.display = "none"; }, 800);
-  }
+        ringConfigs.forEach((cfg, i) => {
+            const ringGeo = new THREE.TorusGeometry(cfg.radius, 0.12, 16, 80); // 80 分段即可
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: cfg.color,
+                transparent: true,
+                opacity: 0.4
+            });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = cfg.tilt;
+            ring.rotation.y = 0.3 * i;
+            ring.userData.spin = 0.0006 + i * 0.0004;
+            scene.add(ring);
+            orbitingObjects.push({ mesh: ring, isRing: true });
+        });
 
-  function webglAvailable(){
-    try{
-      const c = document.createElement("canvas");
-      return !!(window.WebGLRenderingContext && (c.getContext("webgl") || c.getContext("experimental-webgl")));
-    }catch(e){ return false; }
-  }
+        /* ========== 3. 糖果行星：数量不变，计算稍微轻一点 ========== */
+        const satelliteData = [
+            {
+                radius: 20,
+                size: 2.0,
+                color: 0xffc1ea,
+                emissive: 0xff7ad9,
+                speed: 0.006,
+                yOffset: 4
+            },
+            {
+                radius: 26,
+                size: 1.6,
+                color: 0xaee6ff,
+                emissive: 0x6fd6ff,
+                speed: 0.004,
+                yOffset: -2
+            },
+            {
+                radius: 32,
+                size: 1.4,
+                color: 0xfff3b3,
+                emissive: 0xffdd6f,
+                speed: 0.003,
+                yOffset: 6
+            }
+        ];
 
-  /* ========= Device / lite mode ========= */
-  const preferLite = (() => {
-    const isMobile = !!(window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
-    const mem = Number(navigator.deviceMemory || 0);
-    const isLowEnd = mem > 0 && mem <= 4;
-    return isMobile || isLowEnd;
-  })();
+        satelliteData.forEach((data) => {
+            const sGeo = new THREE.SphereGeometry(data.size, 24, 24); // 降一点细分
+            const sMat = new THREE.MeshStandardMaterial({
+                color: data.color,
+                emissive: data.emissive,
+                emissiveIntensity: 0.9,
+                roughness: 0.3,
+                metalness: 0.2
+            });
+            const sMesh = new THREE.Mesh(sGeo, sMat);
+            const angle = Math.random() * Math.PI * 2;
+            scene.add(sMesh);
+            orbitingObjects.push({
+                mesh: sMesh,
+                radius: data.radius,
+                speed: data.speed,
+                angle,
+                yOffset: data.yOffset
+            });
+        });
 
-  /* ========= Loader behavior: fake progress + hard timeout ========= */
-  let fakeP = 0;
-  const fakeTimer = setInterval(() => {
-    fakeP = Math.min(fakeP + (preferLite ? 7 : 5) + Math.random() * 6, 92);
-    setProgress(fakeP);
-  }, 220);
+        /* ========== 4. 彩色星空：大幅减数量（从 6000+ 降到 ~1500） ========== */
+        const starConfigs = [
+            { count: 600, size: 0.9, color: 0xffffff, speed: 0.7 },
+            { count: 400, size: 1.0, color: 0xffb3ff, speed: 1.1 },
+            { count: 300, size: 1.1, color: 0xaee6ff, speed: 0.9 },
+            { count: 250, size: 1.3, color: 0xfff3b3, speed: 0.6 }
+        ];
 
-  const LOADER_TIMEOUT_MS = preferLite ? 3500 : 5200;
-  const hardTimeout = setTimeout(() => {
-    clearInterval(fakeTimer);
-    setProgress(100);
-    hideLoader();
-  }, LOADER_TIMEOUT_MS);
+        starConfigs.forEach((cfg, idx) => {
+            const geo = new THREE.BufferGeometry();
+            const positions = new Float32Array(cfg.count * 3);
 
-  function markReady(){
-    clearInterval(fakeTimer);
-    clearTimeout(hardTimeout);
-    setProgress(100);
-    setTimeout(hideLoader, 180);
-  }
+            for (let i = 0; i < cfg.count; i++) {
+                // 半径范围也略微缩小一点
+                positions[i * 3] = (Math.random() - 0.5) * 700;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * 700;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 700;
+            }
 
-  /* ========= Three.js state ========= */
-  let scene, camera, renderer, globe;
-  let orbitingObjects = [];
-  let starLayers = [];
-  let shootingStars = [];
-  let rafId = 0;
-  let clock = null;
+            geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
 
-  function cleanupThree(){
-    if (rafId) cancelAnimationFrame(rafId);
-    rafId = 0;
-    orbitingObjects = [];
-    starLayers = [];
-    shootingStars = [];
+            const mat = new THREE.PointsMaterial({
+                size: cfg.size,
+                color: cfg.color,
+                transparent: true,
+                opacity: 0.5,
+                depthWrite: false
+            });
 
-    if (renderer && renderer.domElement && renderer.domElement.parentNode) {
-      renderer.domElement.parentNode.removeChild(renderer.domElement);
-    }
-    renderer = null; scene = null; camera = null; globe = null; clock = null;
-  }
+            const cloud = new THREE.Points(geo, mat);
+            cloud.userData.twinkleSpeed = cfg.speed;
+            cloud.userData.baseOpacity = 0.35 + idx * 0.08;
+            starLayers.push(cloud);
+            scene.add(cloud);
+        });
 
-  function triggerShootingStar(star){
-    if (!window.gsap || !gsap.to) return;
-    const startX = (Math.random() - 0.5) * 320;
-    const startY = 120 + Math.random() * 120;
-    const startZ = (Math.random() - 0.5) * 120;
-    star.position.set(startX, startY, startZ);
-
-    const duration = 1.0 + Math.random() * 1.0;
-    const delay = Math.random() * 6;
-
-    gsap.to(star.position, {
-      x: startX - 220,
-      y: startY - 320,
-      duration,
-      delay,
-      onStart: () => { star.material.opacity = 0.85; },
-      onComplete: () => { star.material.opacity = 0; triggerShootingStar(star); }
-    });
-  }
-
-  function buildSceneFastPlanet(){
-    scene = new THREE.Scene();
-
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 45;
-
-    renderer = new THREE.WebGLRenderer({ antialias: !preferLite, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, preferLite ? 1.0 : 1.5));
-    canvasHost.appendChild(renderer.domElement);
-
-    // 先透明，首帧后淡入
-    renderer.domElement.style.opacity = "0";
-    renderer.domElement.style.transition = "opacity 900ms ease";
-
-    const seg = preferLite ? 24 : 40;
-    const globeGeo = new THREE.SphereGeometry(12, seg, seg);
-    const globeMat = new THREE.MeshStandardMaterial({
-      color: 0xff7ad9,
-      emissive: 0xb84dff,
-      emissiveIntensity: 0.8,
-      roughness: 0.45,
-      metalness: 0.1,
-      transparent: true,
-      opacity: 0.95
-    });
-    globe = new THREE.Mesh(globeGeo, globeMat);
-    scene.add(globe);
-
-    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-    renderer.render(scene, camera);
-
-    // 首帧到：canvas 渐入 + 静态球渐出 + loader 退场
-    requestAnimationFrame(() => {
-      renderer.domElement.style.opacity = "1";
-      fadeOutStaticPlanet();
-      markReady();
-    });
-
-    clock = new THREE.Clock();
-  }
-
-  function buildSceneDeferredUniverse(){
-    // 环
-    const ringConfigs = [
-      { radius: 18, color: 0xff9ad5, tilt: 0.9 },
-      { radius: 24, color: 0x9adfff, tilt: 1.2 }
-    ];
-    ringConfigs.forEach((cfg, i) => {
-      const ringGeo = new THREE.TorusGeometry(cfg.radius, 0.12, 16, preferLite ? 48 : 80);
-      const ringMat = new THREE.MeshBasicMaterial({ color: cfg.color, transparent: true, opacity: 0.4 });
-      const ring = new THREE.Mesh(ringGeo, ringMat);
-      ring.rotation.x = cfg.tilt;
-      ring.rotation.y = 0.3 * i;
-      ring.userData.spin = 0.0006 + i * 0.0004;
-      scene.add(ring);
-      orbitingObjects.push({ mesh: ring, isRing: true });
-    });
-
-    // 卫星
-    const satelliteData = [
-      { radius: 20, size: 2.0, color: 0xffc1ea, emissive: 0xff7ad9, speed: 0.006, yOffset: 4 },
-      { radius: 26, size: 1.6, color: 0xaee6ff, emissive: 0x6fd6ff, speed: 0.004, yOffset: -2 },
-      { radius: 32, size: 1.4, color: 0xfff3b3, emissive: 0xffdd6f, speed: 0.003, yOffset: 6 }
-    ];
-    satelliteData.forEach((data) => {
-      const seg = preferLite ? 18 : 24;
-      const sGeo = new THREE.SphereGeometry(data.size, seg, seg);
-      const sMat = new THREE.MeshStandardMaterial({
-        color: data.color,
-        emissive: data.emissive,
-        emissiveIntensity: 0.9,
-        roughness: 0.3,
-        metalness: 0.2
-      });
-      const sMesh = new THREE.Mesh(sGeo, sMat);
-      const angle = Math.random() * Math.PI * 2;
-      scene.add(sMesh);
-      orbitingObjects.push({ mesh: sMesh, radius: data.radius, speed: data.speed, angle, yOffset: data.yOffset });
-    });
-
-    // 星空
-    const density = preferLite ? 0.38 : 1;
-    const starConfigs = [
-      { count: Math.round(600 * density), size: 0.9, color: 0xffffff, speed: 0.7 },
-      { count: Math.round(400 * density), size: 1.0, color: 0xffb3ff, speed: 1.1 },
-      { count: Math.round(300 * density), size: 1.1, color: 0xaee6ff, speed: 0.9 },
-      { count: preferLite ? 0 : Math.round(250 * density), size: 1.3, color: 0xfff3b3, speed: 0.6 }
-    ].filter(s => s.count > 0);
-
-    starConfigs.forEach((cfg, idx) => {
-      const geo = new THREE.BufferGeometry();
-      const positions = new Float32Array(cfg.count * 3);
-      for (let i = 0; i < cfg.count; i++) {
-        positions[i * 3] = (Math.random() - 0.5) * 700;
-        positions[i * 3 + 1] = (Math.random() - 0.5) * 700;
-        positions[i * 3 + 2] = (Math.random() - 0.5) * 700;
-      }
-      geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-      const mat = new THREE.PointsMaterial({ size: cfg.size, color: cfg.color, transparent: true, opacity: 0.5, depthWrite: false });
-      const cloud = new THREE.Points(geo, mat);
-      cloud.userData.twinkleSpeed = cfg.speed;
-      cloud.userData.baseOpacity = 0.35 + idx * 0.08;
-      starLayers.push(cloud);
-      scene.add(cloud);
-    });
-
-    // 流星
-    const nM = preferLite ? 3 : 6;
-    for (let i = 0; i < nM; i++) {
-      const sGeo = new THREE.BufferGeometry();
-      sGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array([0, 0, 0]), 3));
-      const sStar = new THREE.Points(
-        sGeo,
-        new THREE.PointsMaterial({ size: 2.0, color: 0xffffff, transparent: true, opacity: 0 })
-      );
-      scene.add(sStar);
-      shootingStars.push(sStar);
-      triggerShootingStar(sStar);
-    }
-
-    // 彩灯
-    const pinkLight = new THREE.PointLight(0xff66cc, 2.2, 260);
-    pinkLight.position.set(40, 50, 60);
-    scene.add(pinkLight);
-
-    const cyanLight = new THREE.PointLight(0x66d9ff, 1.4, 260);
-    cyanLight.position.set(-35, -20, -40);
-    scene.add(cyanLight);
-  }
-
-  function animate(){
-    rafId = requestAnimationFrame(animate);
-    if (!renderer || !scene || !camera || !clock) return;
-    if (document.hidden) return;
-
-    const t = clock.getElapsedTime();
-
-    if (globe) {
-      globe.rotation.y += 0.003;
-      globe.rotation.x = 0.12 * Math.sin(t * 0.25);
-    }
-
-    for (let i = 0; i < starLayers.length; i++) {
-      const cloud = starLayers[i];
-      cloud.rotation.y += 0.00012 * (i + 1);
-      cloud.rotation.x += 0.00004 * (i + 1);
-      const speed = cloud.userData.twinkleSpeed;
-      const base = cloud.userData.baseOpacity;
-      cloud.material.opacity = base + 0.22 * Math.sin(t * speed + i);
-    }
-
-    for (let i = 0; i < orbitingObjects.length; i++) {
-      const obj = orbitingObjects[i];
-      if (obj.isRing) {
-        obj.mesh.rotation.z += obj.mesh.userData.spin;
-      } else {
-        obj.angle += obj.speed;
-        obj.mesh.position.x = Math.cos(obj.angle) * obj.radius;
-        obj.mesh.position.z = Math.sin(obj.angle) * obj.radius;
-        obj.mesh.position.y = obj.yOffset + Math.sin(obj.angle * 0.5) * 2.5;
-      }
-    }
-
-    renderer.render(scene, camera);
-  }
-
-  /* ========= Panels / scroll helpers (你原逻辑保持) ========= */
-  window.openPanel = function(id){
-    window.closeAll();
-    const panel = document.getElementById(id);
-    if (!panel) return;
-    panel.style.display = "block";
-    panel.scrollTop = 0;
-
-    if (window.gsap && gsap.fromTo) {
-      gsap.fromTo(panel, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" });
-    } else {
-      panel.style.opacity = "1";
-    }
-
-    const home = document.getElementById("home-content");
-    if (home) home.style.opacity = "0.06";
-
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
-  };
-
-  window.closeAll = function(){
-    document.querySelectorAll(".magic-glass").forEach((p) => {
-      if (p.style.display === "block") {
-        if (window.gsap && gsap.to) {
-          gsap.to(p, { opacity: 0, y: 20, duration: 0.3, onComplete: () => (p.style.display = "none") });
-        } else {
-          p.style.display = "none";
+        /* ========== 5. 流星数量不变，但效果更轻一点 ========== */
+        for (let i = 0; i < 6; i++) { // 从 8 降到 6
+            const sGeo = new THREE.BufferGeometry();
+            sGeo.setAttribute(
+                "position",
+                new THREE.BufferAttribute(new Float32Array([0, 0, 0]), 3)
+            );
+            const sStar = new THREE.Points(
+                sGeo,
+                new THREE.PointsMaterial({
+                    size: 2.0,
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0
+                })
+            );
+            scene.add(sStar);
+            shootingStars.push(sStar);
+            triggerShootingStar(sStar);
         }
-      }
-    });
-    const home = document.getElementById("home-content");
-    if (home) home.style.opacity = "1";
 
-    document.documentElement.style.overflow = "";
-    document.body.style.overflow = "";
-  };
+        /* ========== 6. 灯光保持原有风格 ========== */
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
-  window.scrollToWorks = function(){
-    const el = document.getElementById("selected-works");
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+        const pinkLight = new THREE.PointLight(0xff66cc, 2.2, 260);
+        pinkLight.position.set(40, 50, 60);
+        scene.add(pinkLight);
 
-  /* ========= Art lightbox (你原逻辑保持) ========= */
-  const artImages = [
-    { src: "heart_1.jpg", cap: "HEART I" },
-    { src: "heart_2.jpg", cap: "HEART II" },
-    { src: "heart_3.jpg", cap: "HEART III" }
-  ];
-  let artIndex = 0;
-
-  window.openArt = function(i){
-    artIndex = i;
-    const box = document.getElementById("art-lightbox");
-    const img = document.getElementById("lightbox-image");
-    const cap = document.getElementById("lightbox-caption");
-    if (!box || !img || !cap) return;
-    img.src = artImages[artIndex].src;
-    cap.textContent = artImages[artIndex].cap;
-    box.style.display = "flex";
-  };
-  window.closeArt = function(){
-    const box = document.getElementById("art-lightbox");
-    if (box) box.style.display = "none";
-  };
-  window.prevArt = function(){
-    artIndex = (artIndex - 1 + artImages.length) % artImages.length;
-    window.openArt(artIndex);
-  };
-  window.nextArt = function(){
-    artIndex = (artIndex + 1) % artImages.length;
-    window.openArt(artIndex);
-  };
-  window.lightboxBgClick = function(e){
-    if (e && e.target && e.target.id === "art-lightbox") window.closeArt();
-  };
-
-  /* ========= Boot: 静态球立刻可见 -> 0.5s 后 WebGL ========= */
-  function boot(){
-    if (staticPlanet) staticPlanet.style.opacity = "1";
-
-    // 如果 three/webgl 不可用：直接进入（保留静态球 + 背景）
-    if (!window.THREE || !webglAvailable()) {
-      console.warn("THREE/WebGL unavailable. Fallback to static.");
-      markReady();
-      return;
-    }
-
-    cleanupThree();
-
-    // 0.5s 后启动：实现“先静态球 -> 再长出宇宙”
-    setTimeout(() => {
-      try {
-        setProgress(18);
-        buildSceneFastPlanet(); // 先出 planet 首帧
-        setProgress(70);
-
-        // 重宇宙延后构建（避免首屏卡）
-        setTimeout(() => {
-          try { buildSceneDeferredUniverse(); } catch(e){ console.error(e); }
-        }, preferLite ? 120 : 0);
+        const cyanLight = new THREE.PointLight(0x66d9ff, 1.4, 260);
+        cyanLight.position.set(-35, -20, -40);
+        scene.add(cyanLight);
 
         animate();
+    }
 
-      } catch(e) {
-        console.error("boot error:", e);
-        markReady();
-      }
-    }, 500);
-  }
+    function triggerShootingStar(star) {
+        const startX = (Math.random() - 0.5) * 320;
+        const startY = 120 + Math.random() * 120;
+        const startZ = (Math.random() - 0.5) * 120;
+        star.position.set(startX, startY, startZ);
 
-  window.addEventListener("load", boot);
+        const duration = 1.0 + Math.random() * 1.0;
+        const delay = Math.random() * 6;
 
-  window.addEventListener("resize", () => {
-    if (!camera || !renderer) return;
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, preferLite ? 1.0 : 1.5));
-  });
+        gsap.to(star.position, {
+            x: startX - 220,
+            y: startY - 320,
+            duration,
+            delay,
+            onStart: () => {
+                star.material.opacity = 0.85;
+            },
+            onComplete: () => {
+                star.material.opacity = 0;
+                triggerShootingStar(star);
+            }
+        });
+    }
 
-})();
+    function animate() {
+        requestAnimationFrame(animate);
+        const t = clock.getElapsedTime();
+
+        if (globe) {
+            globe.rotation.y += 0.003;
+            globe.rotation.x = 0.12 * Math.sin(t * 0.25);
+        }
+
+        starLayers.forEach((cloud, idx) => {
+            cloud.rotation.y += 0.00012 * (idx + 1);
+            cloud.rotation.x += 0.00004 * (idx + 1);
+
+            const speed = cloud.userData.twinkleSpeed;
+            const base = cloud.userData.baseOpacity;
+            cloud.material.opacity = base + 0.22 * Math.sin(t * speed + idx);
+        });
+
+        orbitingObjects.forEach((obj) => {
+            if (obj.isRing) {
+                obj.mesh.rotation.z += obj.mesh.userData.spin;
+            } else {
+                obj.angle += obj.speed;
+                obj.mesh.position.x = Math.cos(obj.angle) * obj.radius;
+                obj.mesh.position.z = Math.sin(obj.angle) * obj.radius;
+                obj.mesh.position.y =
+                    obj.yOffset + Math.sin(obj.angle * 0.5) * 2.5;
+            }
+        });
+
+        renderer.render(scene, camera);
+    }
+
+    function openPanel(id) {
+        closeAll();
+        const panel = document.getElementById(id);
+        if (panel) {
+            panel.style.display = "block";
+            panel.scrollTop = 0;
+            gsap.fromTo(
+                panel,
+                { opacity: 0, y: 30 },
+                { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }
+            );
+            document.getElementById("home-content").style.opacity = "0.05";
+        }
+    }
+
+    function closeAll() {
+        document.querySelectorAll(".magic-glass").forEach((p) => {
+            if (p.style.display === "block") {
+                gsap.to(p, {
+                    opacity: 0,
+                    y: 20,
+                    duration: 0.3,
+                    onComplete: () => (p.style.display = "none")
+                });
+            }
+        });
+        document.getElementById("home-content").style.opacity = "1";
+    }
+
+    window.onload = init;
+    window.onresize = () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    };
 </script>
-
 </body>
 </html>
