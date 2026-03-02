@@ -974,6 +974,32 @@
       });
     }
 
+// ✅ 让进度条自己动（不依赖 three.js 是否加载成功）
+let fakeP = 0;
+const fakeTimer = setInterval(() => {
+  fakeP = Math.min(fakeP + Math.random() * 7, 92);
+  setProgress(fakeP);
+}, 220);
+
+// ✅ 超时兜底：不管怎样都进入主页（避免卡死在 0%）
+const LOADER_TIMEOUT_MS = 6500;
+const hardTimeout = setTimeout(() => {
+  console.warn("Loader timeout: entering fallback mode.");
+  clearInterval(fakeTimer);
+  setProgress(100);
+  hideLoader();
+}, LOADER_TIMEOUT_MS);
+
+// ✅ 当 three.js 初始化完成后，清掉兜底计时器
+function markReadyAndHideLoaderSoon(){
+  clearInterval(fakeTimer);
+  clearTimeout(hardTimeout);
+  setProgress(100);
+  setTimeout(hideLoader, 250);
+}
+
+
+
     function triggerShootingStar(star) {
       const startX = (Math.random() - 0.5) * 320;
       const startY = 120 + Math.random() * 120;
