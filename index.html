@@ -6,8 +6,8 @@
   <title>Qianyi Iris Ma | Scholar & Writer</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+ <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Montserrat:wght@200;300;400;600&display=swap" rel="stylesheet">
 
   <style>
@@ -45,6 +45,34 @@
       height: 100vh;
       z-index: 1;
     }
+
+
+#static-planet{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:2;
+  pointer-events:none;
+}
+
+#static-planet::before{
+  content:"";
+  width:min(52vw, 340px);
+  aspect-ratio:1/1;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255,255,255,0.35), rgba(255,255,255,0) 35%),
+    radial-gradient(circle at 40% 40%, rgba(255,122,217,0.95), rgba(184,77,255,0.65) 55%, rgba(19,2,36,0.0) 75%),
+    radial-gradient(circle at 50% 50%, rgba(255,122,217,0.35), rgba(0,0,0,0) 70%);
+  box-shadow:
+    0 40px 120px rgba(0,0,0,0.55),
+    0 0 60px rgba(255,0,127,0.18),
+    0 0 90px rgba(138,43,226,0.16);
+  filter:saturate(1.05);
+  transform: translateY(10px);
+}
 
     /* Scroll content layer */
     .page{
@@ -817,10 +845,7 @@
     </div>
   </div>
 
-  setTimeout(() => {
-  const loaderEl = document.getElementById("loader");
-  if (loaderEl) loaderEl.style.display = "none";
-}, 10000);
+
 
 <script>
 (() => {
