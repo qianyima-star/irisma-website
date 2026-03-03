@@ -22,6 +22,11 @@
       --accent-line:#8a2be2;
     }
 
+
+  #art-lightbox {
+    display: none;
+  }
+
     html, body{
       margin:0;
       padding:0;
@@ -773,6 +778,8 @@
     </div>
   </div>
 
+
+
 <script>
 (() => {
   "use strict";
@@ -998,7 +1005,7 @@ renderer.autoClear = true;
     // atmosphere glow: 让它像行星而不是塑料球
     const atmGeo = new THREE.SphereGeometry(12.6, preferLite ? 26 : 48, preferLite ? 26 : 48);
     const atmMat = new THREE.MeshBasicMaterial({
-      color: 0x9adfff,
+      color: 0xffb3e6,   // ✅ 粉色光晕
       transparent: true,
       opacity: 0.09,
       blending: THREE.AdditiveBlending,
@@ -1012,7 +1019,7 @@ renderer.autoClear = true;
     const key = new THREE.DirectionalLight(0xffc7f0, 0.9);
     key.position.set(40, 60, 80);
     scene.add(key);
-    const rim = new THREE.DirectionalLight(0x66d9ff, 0.65);
+    const rim = new THREE.DirectionalLight(0xff9ad5, 0.4);
     rim.position.set(-70, -30, -90);
     scene.add(rim);
 
@@ -1121,7 +1128,7 @@ renderer.autoClear = true;
 
     try{
       buildThreeBase();
-      renderer.domElement.style.opacity = "1";
+
 
       // 先渲一帧（只有球，但 canvas 仍然是 opacity 0，不会“半成品露出来”）
       renderer.render(scene, camera);
