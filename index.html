@@ -50,11 +50,7 @@
 #static-planet{
   position:absolute;
   inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:3;
-  pointer-events:none;
+  z-index:2;   /* ⭐ 静态球在星空上面 */
 }
 
 #static-planet::before{
@@ -398,13 +394,13 @@
       object-fit: cover;
       border-radius: 50%;
     }
+
 #stars2d{
   position:absolute;
   inset:0;
   width:100%;
   height:100%;
-  z-index:1;
-  display:block;
+  z-index:1;   /* ⭐ 星空在最底层 */
 }
   </style>
 </head>
@@ -896,8 +892,8 @@
 
     const g = ctx.createRadialGradient(340, 280, 60, 512, 512, 560);
     g.addColorStop(0.00, "rgba(255,255,255,0.50)");
-    g.addColorStop(0.16, "rgba(255,122,217,0.96)");
-    g.addColorStop(0.55, "rgba(184,77,255,0.80)");
+    g.addColorStop(0.16, "rgba(255,140,225,0.98)"); // 更粉
+    g.addColorStop(0.55, "rgba(210,95,255,0.55)");  // 紫变淡
     g.addColorStop(1.00, "rgba(19,2,36,1.0)");
     ctx.fillStyle = g;
     ctx.fillRect(0,0,c.width,c.height);
@@ -969,6 +965,8 @@ renderer.domElement.style.width = "100%";
 renderer.domElement.style.height = "100%";
 renderer.domElement.style.zIndex = "2";
 renderer.domElement.style.pointerEvents = "none";
+renderer.setClearColor(0x000000, 0); // 关键：透明清屏
+renderer.autoClear = true;
 
     // IMPORTANT: 先透明，等“真的加载好”再渐入
     renderer.domElement.style.opacity = "0";
@@ -984,8 +982,8 @@ renderer.domElement.style.pointerEvents = "none";
       map: planetTex,
       bumpMap: bumpTex,
       bumpScale: 0.18,
-      emissive: 0xb84dff,
-      emissiveIntensity: 0.20, // 防“糖球”
+      emissive: 0xff5fbf,          // 偏粉的发光
+      emissiveIntensity: 0.16,     // 稍微压一点，避免“糖球”
       roughness: 0.42,
       metalness: 0.03,
       clearcoat: 0.55,
@@ -1117,42 +1115,51 @@ renderer.domElement.style.pointerEvents = "none";
   }
 
   function startThreeDeferred(){
-    // 你要“首屏先星空，再慢慢加载特效”：这里做延迟 + idle
-    const start = () => {
-      // 不让移动端强行上 WebGL（更稳）
-      if (preferLite) return;
+  const start = () => {
+    if (preferLite) return;
+    if (!window.THREE || !webglAvailable()) return;
 
-      if (!window.THREE || !webglAvailable()) return;
+    try{
+      buildThreeBase();
+      renderer.domElement.style.opacity = "1";
 
-      try{
-        buildThreeBase();
+      // 先渲一帧（只有球，但 canvas 仍然是 opacity 0，不会“半成品露出来”）
+      renderer.render(scene, camera);
 
-        // 先渲一帧，确保不是空场景再渐入
+      // 再补齐宇宙层：星云/环/卫星
+
+
+      setTimeout(() => {
+        try { buildThreeUniverse(); } catch(e){ console.warn(e); }
+
+        // ✅ 宇宙层建好后再渐入
         renderer.render(scene, camera);
-
-        // 再慢慢补齐宇宙层
-        setTimeout(() => {
-          try { buildThreeUniverse(); } catch(e){ console.warn(e); }
-        }, 150);
-
-        // 渐入 three canvas，但不强制隐藏静态星球（保持一致风格）
         requestAnimationFrame(() => {
           renderer.domElement.style.opacity = "1";
+
+          // ✅ three 真出来后，静态球淡出
+          if (staticPlanet){
+            staticPlanet.style.transition = "opacity 600ms ease";
+            staticPlanet.style.opacity = "0";
+            setTimeout(() => { staticPlanet.style.display = "none"; }, 650);
+          }
         });
 
+        // ✅ 动画只启动一次
         animateThree();
-      }catch(e){
-        console.warn("Three init failed:", e);
-      }
-    };
+      }, 150);
 
-    // 优先 idle，否则 setTimeout
-    if ("requestIdleCallback" in window){
-      requestIdleCallback(start, { timeout: 2200 });
-    } else {
-      setTimeout(start, 1200);
+    }catch(e){
+      console.warn("Three init failed:", e);
     }
+  };
+
+  if ("requestIdleCallback" in window){
+    requestIdleCallback(start, { timeout: 2200 });
+  } else {
+    setTimeout(start, 1200);
   }
+}
 
   /* ===================== Panels & lightbox (保持你原行为) ===================== */
   window.openPanel = function(id){
@@ -1243,16 +1250,28 @@ renderer.domElement.style.pointerEvents = "none";
     startThreeDeferred();
   }
 
-  window.addEventListener("load", boot);
+// ✅ boot：不要等 load（线上慢资源会拖很久），也不要错过事件
+if (document.readyState === "complete" || document.readyState === "interactive") {
+  boot();
+} else {
+  window.addEventListener("DOMContentLoaded", boot, { once: true });
+}
   window.addEventListener("resize", () => {
-    resizeStars2D();
-    if (camera && renderer){
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, preferLite ? 1.0 : 1.5));
-    }
-  });
+  resizeStars2D();
+
+  if (camera && renderer) {
+    const ww = window.innerWidth;
+    const hh = window.innerHeight;
+
+    camera.aspect = ww / hh;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(ww, hh);
+
+    // ✅ 只在这里统一一次 pixelRatio（避免重复/不一致）
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, preferLite ? 1.0 : 1.5));
+  }
+});
 
 })();
 </script>
